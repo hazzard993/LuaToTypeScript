@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+        "rootDir": "src",
+        "outDir": "dist",
+        "downlevelIteration": true,
+        "types": [
+            "jest",
+            "node"
+        ]
+    }
+}
