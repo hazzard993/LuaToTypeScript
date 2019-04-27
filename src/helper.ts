@@ -1,11 +1,12 @@
 import * as lua from "./ast";
 
-export function getPreviousNode(chunk: lua.Chunk, node: lua.Node): lua.Node {
+export function getPreviousNode(chunk: lua.Chunk, node: lua.Node): lua.Node | undefined {
     let previousNode: lua.Node;
     for (const statement of chunk.body) {
-        if (statement !== node) {
+        if (statement === node) {
             previousNode = statement;
         } else {
+            // @ts-ignore
             return previousNode;
         }
     }

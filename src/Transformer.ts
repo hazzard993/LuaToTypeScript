@@ -3,13 +3,11 @@ import * as lua from "./ast";
 
 export class Transformer {
 
-    public transformChunk(ast: lua.Chunk): string {
-        const lines = [];
-        ast.body.map((node) => lines.push(...this.transformStatement(node)));
-        return lines.join("\n");
+    public transformChunk(ast: lua.Chunk): ts.Statement[] {
+        return ast.body.map(statement => this.transformStatement(statement));
     }
 
-    public * transformStatement(node: lua.Statement): IterableIterator<string> {
+    private transformStatement(node: lua.Statement): ts.Statement {
         switch (node.type) {
             case "LocalStatement":
                 return this.transformLocalStatement(node);
@@ -18,16 +16,16 @@ export class Transformer {
         }
     }
 
-    public * transformExpression(node: lua.Expression) {
-        switch (node.type) {
-            case "NumericLiteral":
-                return this.transformLocalStatement(node as lua.LocalStatement);
-            default:
-                throw new Error(`Unknown expression kind ${node.type}`);
-        }
-    }
+    // private transformExpression(node: lua.Expression): ts.Expression {
+    //     switch (node.type) {
+    //         case "NumericLiteral":
+    //             return this.transformNumericLiteral(node);
+    //         default:
+    //             throw new Error(`Unknown expression kind ${node.type}`);
+    //     }
+    // }
 
-    public transformLocalStatement(node: lua.LocalStatement): ts.VariableStatement {
+    private transformLocalStatement(node: lua.LocalStatement): ts.VariableStatement {
         const arrayBindingPattern = ts.createArrayBindingPattern(
             node.variables.map((identifier) => {
                 return ts.createBindingElement(
@@ -45,20 +43,16 @@ export class Transformer {
                     ts.createVariableDeclaration(
                         arrayBindingPattern,
                         undefined,
-                        ts.createArrayLiteral([ts.createNumericLiteral('0')], false)
+                        ts.createArrayLiteral([ts.createNumericLiteral("0")], false),
                     ),
                 ],
                 ts.NodeFlags.Let,
             ),
         );
-        // const variableSet = node.variables.map((identifier) => identifier.name).join(", ");
-        // const variableSet = node.init.map((expression) => [...this.transformExpression(expression)].).join(", ");
-        // const variableBinding = `[${variableSet}]`;
-        // yield `let ${variableBinding} = `;
     }
 
-    public transformNumericLiteral(node: lua.NumericLiteral): ts.NumericLiteral {
-        return ts.createNumericLiteral(node.value.toString());
-    }
+    // private transformNumericLiteral(node: lua.NumericLiteral): ts.NumericLiteral {
+    //     return ts.createNumericLiteral(node.value.toString());
+    // }
 
 }

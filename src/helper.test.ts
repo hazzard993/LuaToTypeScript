@@ -3,7 +3,7 @@ import * as lua from "./ast";
 import * as helper from "./helper";
 
 describe("Test getCommentsAsString", () => {
-    test.each([
+    test.each<[string, number, string]>([
         ["i = 0", 0, ""],
         ["--comment,i = 0", 0, "comment"],
         ["--two,--comments,i = 0", 0, "two comments"],
@@ -22,7 +22,7 @@ describe("Test getCommentsAsString", () => {
 });
 
 describe("Test getCommentsAsString", () => {
-    test.each([
+    test.each<[string, number, string]>([
         ["i = 0", 0, ""],
         ["--comment,i = 0", 0, "comment"],
         ["--two,--comments,i = 0", 0, "two comments"],

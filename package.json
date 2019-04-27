@@ -2,11 +2,14 @@
   "name": "luatots",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "jest"
   },
+  "bin": {
+    "ltts": "dist/index.js"
+  },
+  "main": "dist/index",
   "keywords": [],
   "author": "",
   "license": "ISC",
