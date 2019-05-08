@@ -274,20 +274,51 @@ export class Transformer {
         return ts.createStringLiteral(node.value);
     }
 
+    // x = 5    (lua.Identifier)
+    // x.x = 5  (lua.MemberExpression)
+    private transformAssignmentExpression<T extends lua.Identifier | lua.MemberExpression>(
+        node: T,
+    ): T extends lua.Identifier ? ts.Identifier : ts.PropertyAccessExpression;
+    private transformAssignmentExpression(
+        node: lua.Identifier | lua.MemberExpression,
+    ): ts.Identifier | ts.PropertyAccessExpression {
+        return node.type === "Identifier"
+            ? this.transformIdentifier(node)
+            : this.transformMemberExpression(node);
+    }
+
+    private transformAssignment(
+        variables: Array<lua.Identifier | lua.MemberExpression>,
+        expressions: lua.Expression[],
+    ): {
+        left: ts.Identifier | ts.PropertyAccessExpression,
+        right: ts.Expression,
+    } | {
+        left: ts.ArrayLiteralExpression,
+        right: ts.ArrayLiteralExpression,
+    } {
+        const transformedVariables = variables.map(variable => this.transformAssignmentExpression(variable));
+        const transformedExpressions = expressions.map(expression => this.transformExpression(expression));
+        if (variables.length > 1) {
+            return {
+                left: ts.createArrayLiteral(transformedVariables, false),
+                right: ts.createArrayLiteral(transformedExpressions, false)
+            };
+        } else {
+            return {
+                left: transformedVariables[0],
+                right: transformedExpressions[0],
+            };
+        }
+    }
+
     private transformAssignmentStatement(node: lua.AssignmentStatement): ts.ExpressionStatement {
+        const { left, right } = this.transformAssignment(node.variables, node.init);
         return ts.createExpressionStatement(
             ts.createBinary(
-                ts.createArrayLiteral(
-                    node.variables.map(variable => variable.type === "Identifier"
-                        ? this.transformIdentifier(variable)
-                        : this.transformMemberExpression(variable)),
-                    false,
-                ),
+                left,
                 ts.createToken(ts.SyntaxKind.FirstAssignment),
-                ts.createArrayLiteral(
-                    node.init.map(expression => this.transformExpression(expression)),
-                    false,
-                ),
+                right,
             ),
         );
     }
@@ -317,18 +348,47 @@ export class Transformer {
         );
     }
 
+    private transformLocalBindingPattern(
+        variables: lua.Identifier[],
+        expressions: lua.Expression[],
+    ): {
+        left: ts.Identifier,
+        right: ts.Expression,
+    } | {
+        left: ts.ArrayBindingPattern,
+        right: ts.ArrayLiteralExpression,
+    } {
+        const transformedVariables = variables.map(variable => this.transformAssignmentExpression(variable));
+        const transformedExpressions = expressions.map(expression => this.transformExpression(expression));
+        if (variables.length > 1) {
+            return {
+                left: ts.createArrayBindingPattern(
+                    transformedVariables.map(
+                        variable => ts.createBindingElement(
+                            undefined,
+                            undefined,
+                            variable,
+                            undefined))),
+                right: ts.createArrayLiteral(transformedExpressions, false),
+            };
+        } else {
+            return {
+                left: transformedVariables[0],
+                right: transformedExpressions[0],
+            };
+        }
+    }
+
     private transformLocalStatement(node: lua.LocalStatement): ts.VariableStatement {
+        const { left, right } = this.transformLocalBindingPattern(node.variables, node.init);
         return ts.createVariableStatement(
             undefined,
             ts.createVariableDeclarationList(
                 [
                     ts.createVariableDeclaration(
-                        this.transformVariablesToArrayBindingPattern(node.variables),
+                        left,
                         undefined,
-                        ts.createArrayLiteral(
-                            node.init.map(identifier => this.transformExpression(identifier)),
-                            false,
-                        ),
+                        right,
                     ),
                 ],
                 ts.NodeFlags.Let,
