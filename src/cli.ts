@@ -7,7 +7,11 @@ export function transpile(args: string[]) {
     const files = args;
     const contents = files.filter(ts.sys.fileExists).map(filename => ts.sys.readFile(filename, "utf8"));
     if (contents.length > 0) {
-        const transformer = new Transformer();
+        const program = ts.createProgram({
+            options: {},
+            rootNames: [],
+        });
+        const transformer = new Transformer(program);
         contents.forEach(content => {
             const ast = luaparse.parse(content as string, {ranges: true}) as lua.Chunk;
             const statements = transformer.transformChunk(ast);
@@ -29,16 +33,6 @@ export function transpile(args: string[]) {
                 resultFile,
             );
             console.log(result);
-            // ts.updateSourceFileNode(sourceFile, statements);
-            // const printer = ts.createPrinter();
-            // console.log(printer.printFile(sourceFile));
-            // console.log(statements);
-            // tsAST.forEach(statement => console.log(printer.printNode(ts.EmitHint.EmbeddedStatement, statement)));
         });
     }
 }
-
-
-// const ast = luaparse.parse("local i = 0", {ranges: true}) as lua.Chunk;
-// const transformer = new Transformer();
-// console.log(transformer.transformChunk(ast));

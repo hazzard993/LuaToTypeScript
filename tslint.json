@@ -4,7 +4,8 @@
     "jsRules": {},
     "rules": {
         "interface-name": false,
-        "arrow-parens": false
+        "arrow-parens": false,
+        "no-bitwise": false
     },
     "rulesDirectory": []
 }
