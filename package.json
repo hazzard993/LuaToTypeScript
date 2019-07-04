@@ -23,6 +23,7 @@
   "dependencies": {
     "@phenomnomnominal/tsquery": "^3.0.0",
     "@types/luaparse": "0.0.29",
+    "@types/node": "^12.0.12",
     "typescript": "^3.3.3333"
   }
 }

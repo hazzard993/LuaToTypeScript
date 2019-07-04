@@ -19,32 +19,31 @@ export class Transformer {
     }
 
     private transformBlock(node: lua.Block): ts.Statement[] {
-        const statements = node.map(statement => this.transformStatement(statement));
-        return this.joinObjectAssignmentStatements(statements);
+        return node.map(statement => this.transformStatement(statement));
     }
 
     private joinObjectAssignmentStatements(
         statements: ts.Statement[],
     ): ts.Statement[] {
         const block = ts.createBlock(statements);
-        tsquery(block, "ExpressionStatement > BinaryExpression > PropertyAccessExpression > Identifier[name=x]")
+        // tsquery(block, "ExpressionStatement > BinaryExpression > PropertyAccessExpression > Identifier[name=x]")
         // tsquery(ts.createBlock(statements),)
-        // const variableDeclarations = statements.filter(
-        //     statement => ts.isVariableStatement(statement)
-        //         && ts.isVariableDeclaration(statement.declarationList.declarations[0])
-        //         && ts.isIdentifier(statement.declarationList.declarations[0].name),
-        // ) as ts.VariableStatement[] & { declarationList: { declarations: [{ name: ts.Identifier }] } };
-        // const objectLiteralDeclarations = variableDeclarations.filter(variableDeclaration =>
-        //     variableDeclaration.declarationList.declarations[0].initializer
-        //         && ts.isObjectLiteralExpression(variableDeclaration.declarationList.declarations[0].initializer),
-        // ) as Array<ts.VariableStatement & {
-        //     declarationList: { declarations: [{ name: ts.Identifier, initializer: ts.Expression }] },
-        // }>;
-        // const objectLiteralNodes = objectLiteralDeclarations.map(objectLiteralDeclaration => ({
-        //     identifier: objectLiteralDeclaration.declarationList.declarations[0].name,
-        //     objectLiteralExpression: objectLiteralDeclaration.declarationList.declarations[0].initializer,
-        // })) as Array<{ identifier: ts.Identifier, objectLiteralExpression: ts.ObjectLiteralExpression }>;
-        // return objectLiteralDeclarations;
+        const variableDeclarations = statements.filter(
+            statement => ts.isVariableStatement(statement)
+                && ts.isVariableDeclaration(statement.declarationList.declarations[0])
+                && ts.isIdentifier(statement.declarationList.declarations[0].name),
+        ) as ts.VariableStatement[] & { declarationList: { declarations: [{ name: ts.Identifier }] } };
+        const objectLiteralDeclarations = variableDeclarations.filter(variableDeclaration =>
+            variableDeclaration.declarationList.declarations[0].initializer
+            && ts.isObjectLiteralExpression(variableDeclaration.declarationList.declarations[0].initializer),
+        ) as Array<ts.VariableStatement & {
+            declarationList: { declarations: [{ name: ts.Identifier, initializer: ts.Expression }] },
+        }>;
+        const objectLiteralNodes = objectLiteralDeclarations.map(objectLiteralDeclaration => ({
+            identifier: objectLiteralDeclaration.declarationList.declarations[0].name,
+            objectLiteralExpression: objectLiteralDeclaration.declarationList.declarations[0].initializer,
+        })) as Array<{ identifier: ts.Identifier, objectLiteralExpression: ts.ObjectLiteralExpression }>;
+        return objectLiteralDeclarations;
     }
 
 
@@ -89,25 +88,86 @@ export class Transformer {
                 return this.transformMemberExpression(node);
             case "CallExpression":
                 return this.transformCallExpression(node);
+            case "BooleanLiteral":
+                return this.transformBooleanLiteral(node);
+            case "VarargLiteral":
+                return this.transformVarargLiteral(node);
+            case "NilLiteral":
+                return this.transformNilLiteral(node);
+            case "IndexExpression":
+                return this.transformIndexExpression(node);
+            default:
+                throw new Error(`Unknown type: ${node!.type}`);
+        }
+    }
+
+    private transformNilLiteral(node: lua.NilLiteral): ts.Identifier {
+        return ts.createIdentifier("undefined");
+    }
+
+    private transformIndexExpression(node: lua.IndexExpression): ts.ElementAccessExpression {
+        return ts.createElementAccess(
+            this.transformExpression(node.base),
+            this.transformExpression(node.index),
+        );
+    }
+
+    private transformVarargLiteral(node: lua.VarargLiteral): ts.Expression {
+        return ts.createSpread(ts.createIdentifier("vararg"));
+    }
+
+    private transformBooleanLiteral(node: lua.BooleanLiteral): ts.Expression {
+        if (node.value) {
+            return ts.createTrue();
+        } else {
+            return ts.createFalse();
         }
     }
 
     private transformBinaryExpression(node: lua.BinaryExpression): ts.BinaryExpression {
-        const operator = node.operator === "%" ? ts.SyntaxKind.PercentToken
-            : node.operator === "*" ? ts.SyntaxKind.AsteriskToken
-                : node.operator === "+" ? ts.SyntaxKind.PlusToken
-                    : node.operator === "-" ? ts.SyntaxKind.MinusToken
-                        : node.operator === ".." ? ts.SyntaxKind.PlusToken
-                            : node.operator === "/" ? ts.SyntaxKind.SlashToken
-                                : node.operator === "<" ? ts.SyntaxKind.LessThanToken
-                                    : node.operator === "<=" ? ts.SyntaxKind.LessThanEqualsToken
-                                        : node.operator === "==" ? ts.SyntaxKind.EqualsEqualsEqualsToken
-                                            : node.operator === ">" ? ts.SyntaxKind.GreaterThanToken
-                                                : node.operator === ">=" ? ts.SyntaxKind.GreaterThanEqualsToken
-                                                    : node.operator === "^" ? ts.SyntaxKind.CaretToken
-                                                        : node.operator === "~=" ? ts.SyntaxKind.ExclamationEqualsEqualsToken : undefined;
-        if (!operator) {
-            throw new Error("Unknown operator");
+        let operator: ts.SyntaxKind;
+        switch (node.operator) {
+            case "%":
+                operator = ts.SyntaxKind.PercentToken;
+                break;
+            case "*":
+                operator = ts.SyntaxKind.AsteriskToken;
+                break;
+            case "+":
+                operator = ts.SyntaxKind.PlusToken;
+                break;
+            case "-":
+                operator = ts.SyntaxKind.MinusToken;
+                break;
+            case "..":
+                operator = ts.SyntaxKind.PlusToken;
+                break;
+            case "/":
+                operator = ts.SyntaxKind.SlashToken;
+                break;
+            case "<":
+                operator = ts.SyntaxKind.LessThanToken;
+                break;
+            case "<=":
+                operator = ts.SyntaxKind.LessThanEqualsToken;
+                break;
+            case "==":
+                operator = ts.SyntaxKind.EqualsEqualsEqualsToken;
+                break;
+            case ">":
+                operator = ts.SyntaxKind.GreaterThanToken;
+                break;
+            case ">=":
+                operator = ts.SyntaxKind.GreaterThanEqualsToken;
+                break;
+            case "^":
+                operator = ts.SyntaxKind.CaretToken;
+                break;
+            case "~=":
+                operator = ts.SyntaxKind.ExclamationEqualsEqualsToken;
+                break;
+            default:
+                throw new Error("Unknown operator");
         }
 
         return ts.createBinary(
@@ -198,6 +258,17 @@ export class Transformer {
         return rootIfStatement;
     }
 
+    private transformType(type: string): ts.TypeNode {
+        switch (type) {
+            case "number":
+                return ts.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword);
+            case "string":
+                return ts.createKeywordTypeNode(ts.SyntaxKind.StringKeyword);
+            default:
+                throw new Error(`Unknown type ${type}`);
+        }
+    }
+
     private transformForNumericStatement(node: lua.ForNumericStatement): ts.ForStatement {
         const identifier = this.transformIdentifier(node.variable);
         const incrementor = node.step === null
@@ -230,11 +301,29 @@ export class Transformer {
                 true,
             ),
         )
-        throw new Error("Method not implemented.");
     }
 
     private transformForGenericStatement(node: lua.ForGenericStatement): ts.ForOfStatement {
-        throw new Error("Method not implemented.");
+        return ts.createForOf(
+            undefined,
+            ts.createVariableDeclarationList(
+                [
+                    ts.createVariableDeclaration(
+                        ts.createArrayBindingPattern(
+                            node.variables.map(identifier => ts.createBindingElement(
+                                undefined,
+                                undefined,
+                                this.transformIdentifier(identifier),
+                                undefined,
+                            )),
+                        ),
+                    ),
+                ],
+                ts.NodeFlags.Const,
+            ),
+            ts.createCall(this.transformExpression(node.iterators[0]), undefined, []),
+            ts.createBlock(this.transformBlock(node.body), true),
+        )
     }
 
     private transformTableKeyString(node: lua.TableKeyString): ts.ObjectLiteralElementLike {
@@ -272,24 +361,35 @@ export class Transformer {
         }
     }
 
-    private transformParameterDeclaration(node: lua.Identifier, availableTags: tags.Tags[]): ts.ParameterDeclaration {
-        const [tparam] = availableTags.filter(
-            currentTag => currentTag.kind === "tparam" && currentTag.name === node.name,
-        ) as tags.TParamTag[];
+    private transformParameterDeclaration(
+        node: lua.Identifier | lua.VarargLiteral,
+        availableTags: tags.Tag[],
+    ): ts.ParameterDeclaration {
+        const tparam = helper.getParameterTParams(node, availableTags);
         const type = tparam ?
-            tparam.type === "number" ? ts.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword) :
-                tparam.type === "string" ? ts.createKeywordTypeNode(ts.SyntaxKind.StringKeyword) :
-                    undefined : undefined;
+            this.transformType(tparam.type) :
+            undefined;
 
-        return ts.createParameter(
-            undefined,
-            undefined,
-            undefined,
-            this.transformIdentifier(node),
-            undefined,
-            type,
-            undefined,
-        );
+        switch (node.type) {
+            case "Identifier":
+                ts.createParameter(
+                    undefined,
+                    undefined,
+                    undefined,
+                    this.transformIdentifier(node),
+                    undefined,
+                    type,
+                );
+            case "VarargLiteral":
+                return ts.createParameter(
+                    undefined,
+                    undefined,
+                    ts.createToken(ts.SyntaxKind.DotDotDotToken),
+                    ts.createIdentifier("vararg"),
+                    undefined,
+                    type,
+                );
+        }
     }
 
     private transformNumericLiteral(node: lua.NumericLiteral): ts.NumericLiteral {
@@ -443,7 +543,9 @@ export class Transformer {
                         ts.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword) :
                 ts.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword);
         });
-        const type = ts.createTupleTypeNode(tparamsTypeNodes);
+        const type = tparamsTypeNodes.length > 0 ?
+            ts.createTupleTypeNode(tparamsTypeNodes) :
+            ts.createKeywordTypeNode(ts.SyntaxKind.VoidKeyword);
 
         switch (node.identifier.type) {
             case "Identifier":

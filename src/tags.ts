@@ -1,4 +1,4 @@
-export type Tags = ParamTag | TParamTag | ReturnTag | TReturnTag;
+export type Tag = ParamTag | TParamTag | ReturnTag | TReturnTag;
 
 export interface ParamTag {
     kind: "param";

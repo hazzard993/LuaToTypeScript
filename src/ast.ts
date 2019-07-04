@@ -5,7 +5,8 @@ export type NodeTypes = "Chunk"
     | "Identifier"
     | "AssignmentStatement"
     | "LocalStatement"
-    | "NumericLiteral";
+    | "NumericLiteral"
+    | "BooleanLiteral";
 
 export type Block = Statement[];
 
@@ -100,7 +101,7 @@ export interface FunctionDeclaration extends Node {
     type: "FunctionDeclaration";
     identifier: Identifier | MemberExpression;
     isLocal: boolean;
-    parameters: Identifier[];
+    parameters: Array<Identifier | VarargLiteral>;
     body: Statement[];
 }
 
@@ -108,7 +109,7 @@ export interface FunctionExpression extends Node {
     type: "FunctionDeclaration";
     identifier: null;
     isLocal: false;
-    parameters: Identifier[];
+    parameters: FunctionDeclaration["parameters"];
     body: Statement[];
 }
 
@@ -182,6 +183,28 @@ export interface StringLiteral extends Node {
     value: string;
 }
 
+export interface BooleanLiteral extends Node {
+    type: "BooleanLiteral";
+    value: boolean;
+}
+
+export interface VarargLiteral extends Node {
+    type: "VarargLiteral";
+    value: "...";
+}
+
+export interface NilLiteral extends Node {
+    type: "NilLiteral";
+    value: null;
+    raw: "nil";
+}
+
+export interface IndexExpression extends Node {
+    type: "IndexExpression";
+    base: Identifier | MemberExpression;
+    index: Expression;
+}
+
 export type Expression = NumericLiteral
     | StringLiteral
     | Identifier
@@ -191,4 +214,8 @@ export type Expression = NumericLiteral
     | LogicalExpression
     | BinaryExpression
     | MemberExpression
-    | CallExpression;
+    | CallExpression
+    | BooleanLiteral
+    | VarargLiteral
+    | NilLiteral
+    | IndexExpression;
