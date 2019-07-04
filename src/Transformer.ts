@@ -1,3 +1,4 @@
+import { tsquery } from "@phenomnomnominal/tsquery";
 import * as ts from "typescript";
 import * as lua from "./ast";
 import * as helper from "./helper";
@@ -19,8 +20,33 @@ export class Transformer {
 
     private transformBlock(node: lua.Block): ts.Statement[] {
         const statements = node.map(statement => this.transformStatement(statement));
-        return statements;
+        return this.joinObjectAssignmentStatements(statements);
     }
+
+    private joinObjectAssignmentStatements(
+        statements: ts.Statement[],
+    ): ts.Statement[] {
+        const block = ts.createBlock(statements);
+        tsquery(block, "ExpressionStatement > BinaryExpression > PropertyAccessExpression > Identifier[name=x]")
+        // tsquery(ts.createBlock(statements),)
+        // const variableDeclarations = statements.filter(
+        //     statement => ts.isVariableStatement(statement)
+        //         && ts.isVariableDeclaration(statement.declarationList.declarations[0])
+        //         && ts.isIdentifier(statement.declarationList.declarations[0].name),
+        // ) as ts.VariableStatement[] & { declarationList: { declarations: [{ name: ts.Identifier }] } };
+        // const objectLiteralDeclarations = variableDeclarations.filter(variableDeclaration =>
+        //     variableDeclaration.declarationList.declarations[0].initializer
+        //         && ts.isObjectLiteralExpression(variableDeclaration.declarationList.declarations[0].initializer),
+        // ) as Array<ts.VariableStatement & {
+        //     declarationList: { declarations: [{ name: ts.Identifier, initializer: ts.Expression }] },
+        // }>;
+        // const objectLiteralNodes = objectLiteralDeclarations.map(objectLiteralDeclaration => ({
+        //     identifier: objectLiteralDeclaration.declarationList.declarations[0].name,
+        //     objectLiteralExpression: objectLiteralDeclaration.declarationList.declarations[0].initializer,
+        // })) as Array<{ identifier: ts.Identifier, objectLiteralExpression: ts.ObjectLiteralExpression }>;
+        // return objectLiteralDeclarations;
+    }
+
 
     private transformStatement(node: lua.Statement): ts.Statement {
         switch (node.type) {

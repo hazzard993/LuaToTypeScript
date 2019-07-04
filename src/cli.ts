@@ -7,23 +7,23 @@ export function transpile(args: string[]) {
     const files = args;
     const contents = files.filter(ts.sys.fileExists).map(filename => ts.sys.readFile(filename, "utf8"));
     if (contents.length > 0) {
+        const sourceFileName = "someFileName.ts";
+        const resultFile = ts.createSourceFile(
+            sourceFileName,
+            "",
+            ts.ScriptTarget.Latest,
+            false,
+            ts.ScriptKind.TS,
+        );
         const program = ts.createProgram({
             options: {},
-            rootNames: [],
+            rootNames: [sourceFileName],
         });
         const transformer = new Transformer(program);
         contents.forEach(content => {
             const ast = luaparse.parse(content as string, {ranges: true}) as lua.Chunk;
             const statements = transformer.transformChunk(ast);
             const block = ts.createBlock(statements);
-            const sourceFile = ts.createSourceFile("", "", ts.ScriptTarget.ES5);
-            const resultFile = ts.createSourceFile(
-                "someFileName.ts",
-                "",
-                ts.ScriptTarget.Latest,
-                false,
-                ts.ScriptKind.TS,
-            );
             const printer = ts.createPrinter({
                 newLine: ts.NewLineKind.LineFeed,
             });

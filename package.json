@@ -1,6 +1,6 @@
 {
-  "name": "luatots",
-  "version": "1.0.0",
+  "name": "lua-to-typescript",
+  "version": "0.0.1",
   "description": "",
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -21,6 +21,7 @@
     "tslint": "^5.14.0"
   },
   "dependencies": {
+    "@phenomnomnominal/tsquery": "^3.0.0",
     "@types/luaparse": "0.0.29",
     "typescript": "^3.3.3333"
   }
