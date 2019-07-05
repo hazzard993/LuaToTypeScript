@@ -3,18 +3,21 @@ import * as ts from "typescript";
 import * as lua from "./ast";
 import * as helper from "./helper";
 import * as tags from "./tags";
+import { TsBuilder } from "./TsBuilder";
 
 export class Transformer {
 
     private chunk!: lua.Chunk;
     private checker?: ts.TypeChecker;
     private diagnostics: string[];
+    private builder: TsBuilder;
 
     constructor(program?: ts.Program) {
         if (program) {
             this.checker = program.getTypeChecker();
         }
         this.diagnostics = [];
+        this.builder = new TsBuilder();
     }
 
     public getDiagnostics(): string[] {
@@ -33,9 +36,9 @@ export class Transformer {
     private joinObjectAssignmentStatements(
         statements: ts.Statement[],
     ): ts.Statement[] {
-        const block = ts.createBlock(statements);
+        const block = this.builder.createBlock(statements);
         // tsquery(block, "ExpressionStatement > BinaryExpression > PropertyAccessExpression > Identifier[name=x]")
-        // tsquery(ts.createBlock(statements),)
+        // tsquery(this.builder.createBlock(statements),)
         const variableDeclarations = statements.filter(
             statement => ts.isVariableStatement(statement)
                 && ts.isVariableDeclaration(statement.declarationList.declarations[0])
@@ -114,25 +117,25 @@ export class Transformer {
     }
 
     private transformNilLiteral(node: lua.NilLiteral): ts.Identifier {
-        return ts.createIdentifier("undefined");
+        return this.builder.createIdentifier("undefined");
     }
 
     private transformIndexExpression(node: lua.IndexExpression): ts.ElementAccessExpression {
-        return ts.createElementAccess(
+        return this.builder.createElementAccess(
             this.transformExpression(node.base),
             this.transformExpression(node.index),
         );
     }
 
     private transformVarargLiteral(node: lua.VarargLiteral): ts.Expression {
-        return ts.createSpread(ts.createIdentifier("vararg"));
+        return this.builder.createSpread(this.builder.createIdentifier("vararg"));
     }
 
     private transformBooleanLiteral(node: lua.BooleanLiteral): ts.Expression {
         if (node.value) {
-            return ts.createTrue();
+            return this.builder.createTrue();
         } else {
-            return ts.createFalse();
+            return this.builder.createFalse();
         }
     }
 
@@ -182,7 +185,7 @@ export class Transformer {
                 throw new Error("Unknown operator");
         }
 
-        return ts.createBinary(
+        return this.builder.createBinary(
             this.transformExpression(node.left),
             operator,
             this.transformExpression(node.right),
@@ -196,7 +199,7 @@ export class Transformer {
             throw new Error("Unknown operator");
         }
 
-        return ts.createBinary(
+        return this.builder.createBinary(
             this.transformExpression(node.left),
             operator,
             this.transformExpression(node.right),
@@ -207,9 +210,9 @@ export class Transformer {
         let operator: ts.SyntaxKind;
         switch (node.operator) {
             case "#":
-                return ts.createPropertyAccess(
+                return this.builder.createPropertyAccess(
                     this.transformExpression(node.argument),
-                    ts.createIdentifier("length"),
+                    this.builder.createIdentifier("length"),
                 );
             case "~":
                 operator = ts.SyntaxKind.ExclamationToken;
@@ -224,25 +227,25 @@ export class Transformer {
                 throw new Error("Unknown operator");
         }
 
-        return ts.createPrefix(operator, this.transformExpression(node.argument));
+        return this.builder.createPrefix(operator, this.transformExpression(node.argument));
     }
 
     private transformMemberExpression(node: lua.MemberExpression): ts.PropertyAccessExpression {
-        return ts.createPropertyAccess(
+        return this.builder.createPropertyAccess(
             this.transformExpression(node.base),
             this.transformIdentifier(node.identifier),
         );
     }
 
     private transformIdentifier(node: lua.Identifier): ts.Identifier {
-        return ts.createIdentifier(node.name);
+        return this.builder.createIdentifier(node.name);
     }
 
     private transformIfStatement(node: lua.IfStatement): ts.IfStatement {
         const ifClause: lua.IfClause = node.clauses[0];
-        const rootIfStatement = ts.createIf(
+        const rootIfStatement = this.builder.createIf(
             this.transformExpression(ifClause.condition),
-            ts.createBlock(
+            this.builder.createBlock(
                 ifClause.body.map(statement => this.transformStatement(statement)),
             ),
         );
@@ -251,16 +254,16 @@ export class Transformer {
         node.clauses.forEach(clause => {
             switch (clause.type) {
                 case "ElseifClause":
-                    lastIfStatement.elseStatement = ts.createIf(
+                    lastIfStatement.elseStatement = this.builder.createIf(
                         this.transformExpression(ifClause.condition),
-                        ts.createBlock(
+                        this.builder.createBlock(
                             ifClause.body.map(statement => this.transformStatement(statement)),
                         ),
                     );
                     lastIfStatement = lastIfStatement.elseStatement as ts.IfStatement;
                     break;
                 case "ElseClause":
-                    lastIfStatement.elseStatement = ts.createBlock(
+                    lastIfStatement.elseStatement = this.builder.createBlock(
                         clause.body.map(statement => this.transformStatement(statement)),
                     );
                     break;
@@ -274,9 +277,9 @@ export class Transformer {
         const types = type.split("|").map(typeString => {
             switch (typeString) {
                 case "number":
-                    return ts.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword);
+                    return this.builder.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword);
                 case "string":
-                    return ts.createKeywordTypeNode(ts.SyntaxKind.StringKeyword);
+                    return this.builder.createKeywordTypeNode(ts.SyntaxKind.StringKeyword);
                 default:
                     throw new Error(`Unknown type ${typeString}`);
             }
@@ -284,24 +287,24 @@ export class Transformer {
         if (types.length === 1) {
             return types[0];
         } else {
-            return ts.createUnionTypeNode(types);
+            return this.builder.createUnionTypeNode(types);
         }
     }
 
     private transformForNumericStatement(node: lua.ForNumericStatement): ts.ForStatement {
         const identifier = this.transformIdentifier(node.variable);
         const incrementor = node.step === null
-            ? ts.createPostfix(identifier, ts.SyntaxKind.PlusPlusToken)
-            : ts.createBinary(
+            ? this.builder.createPostfix(identifier, ts.SyntaxKind.PlusPlusToken)
+            : this.builder.createBinary(
                 identifier,
-                ts.createToken(ts.SyntaxKind.FirstCompoundAssignment),
+                this.builder.createToken(ts.SyntaxKind.FirstCompoundAssignment),
                 this.transformExpression(node.step),
             );
 
-        return ts.createFor(
-            ts.createVariableDeclarationList(
+        return this.builder.createFor(
+            this.builder.createVariableDeclarationList(
                 [
-                    ts.createVariableDeclaration(
+                    this.builder.createVariableDeclaration(
                         identifier,
                         undefined,
                         this.transformExpression(node.start),
@@ -309,13 +312,13 @@ export class Transformer {
                 ],
                 ts.NodeFlags.Let,
             ),
-            ts.createBinary(
+            this.builder.createBinary(
                 identifier,
-                ts.createToken(ts.SyntaxKind.LessThanEqualsToken),
+                this.builder.createToken(ts.SyntaxKind.LessThanEqualsToken),
                 this.transformExpression(node.end),
             ),
             incrementor,
-            ts.createBlock(
+            this.builder.createBlock(
                 node.body.map(statement => this.transformStatement(statement)),
                 true,
             ),
@@ -323,13 +326,13 @@ export class Transformer {
     }
 
     private transformForGenericStatement(node: lua.ForGenericStatement): ts.ForOfStatement {
-        return ts.createForOf(
+        return this.builder.createForOf(
             undefined,
-            ts.createVariableDeclarationList(
+            this.builder.createVariableDeclarationList(
                 [
-                    ts.createVariableDeclaration(
-                        ts.createArrayBindingPattern(
-                            node.variables.map(identifier => ts.createBindingElement(
+                    this.builder.createVariableDeclaration(
+                        this.builder.createArrayBindingPattern(
+                            node.variables.map(identifier => this.builder.createBindingElement(
                                 undefined,
                                 undefined,
                                 this.transformIdentifier(identifier),
@@ -341,16 +344,16 @@ export class Transformer {
                 ts.NodeFlags.Const,
             ),
             this.transformExpression(node.iterators[0]),
-            ts.createBlock(this.transformBlock(node.body), true),
+            this.builder.createBlock(this.transformBlock(node.body), true),
         );
     }
 
     private transformTableKeyString(node: lua.TableKeyString): ts.ObjectLiteralElementLike {
         const name = node.key.type === "Identifier"
             ? this.transformIdentifier(node.key)
-            : ts.createComputedPropertyName(this.transformExpression(node.key));
+            : this.builder.createComputedPropertyName(this.transformExpression(node.key));
 
-        return ts.createPropertyAssignment(
+        return this.builder.createPropertyAssignment(
             name,
             this.transformExpression(node.value),
         );
@@ -370,11 +373,11 @@ export class Transformer {
         }
 
         if (usingTableValues) {
-            return ts.createArrayLiteral(
+            return this.builder.createArrayLiteral(
                 node.fields.map(field => this.transformTableValue(field as lua.TableValue)),
             );
         } else {
-            return ts.createObjectLiteral(
+            return this.builder.createObjectLiteral(
                 node.fields.map(field => this.transformTableKeyString(field as lua.TableKeyString)),
             );
         }
@@ -405,7 +408,7 @@ export class Transformer {
 
         switch (node.type) {
             case "Identifier":
-                return ts.createParameter(
+                return this.builder.createParameter(
                     undefined,
                     undefined,
                     undefined,
@@ -414,11 +417,11 @@ export class Transformer {
                     type,
                 );
             case "VarargLiteral":
-                return ts.createParameter(
+                return this.builder.createParameter(
                     undefined,
                     undefined,
-                    ts.createToken(ts.SyntaxKind.DotDotDotToken),
-                    ts.createIdentifier("vararg"),
+                    this.builder.createToken(ts.SyntaxKind.DotDotDotToken),
+                    this.builder.createIdentifier("vararg"),
                     undefined,
                     type,
                 );
@@ -426,11 +429,11 @@ export class Transformer {
     }
 
     private transformNumericLiteral(node: lua.NumericLiteral): ts.NumericLiteral {
-        return ts.createNumericLiteral(node.value.toString());
+        return this.builder.createNumericLiteral(node.value.toString());
     }
 
     private transformStringLiteral(node: lua.StringLiteral): ts.StringLiteral {
-        return ts.createStringLiteral(node.value);
+        return this.builder.createStringLiteral(node.value);
     }
 
     private transformAssignmentLeftHandSideExpression(
@@ -462,8 +465,8 @@ export class Transformer {
         const transformedExpressions = expressions.map(expression => this.transformExpression(expression));
         if (variables.length > 1) {
             return {
-                left: ts.createArrayLiteral(transformedVariables, false),
-                right: ts.createArrayLiteral(transformedExpressions, false)
+                left: this.builder.createArrayLiteral(transformedVariables, false),
+                right: this.builder.createArrayLiteral(transformedExpressions, false)
             };
         } else {
             return {
@@ -475,21 +478,21 @@ export class Transformer {
 
     private transformAssignmentStatement(node: lua.AssignmentStatement): ts.ExpressionStatement {
         const { left, right } = this.transformAssignment(node.variables, node.init);
-        return ts.createExpressionStatement(
-            ts.createBinary(
+        return this.builder.createExpressionStatement(
+            this.builder.createBinary(
                 left,
-                ts.createToken(ts.SyntaxKind.FirstAssignment),
+                this.builder.createToken(ts.SyntaxKind.FirstAssignment),
                 right,
             ),
         );
     }
 
     private transformCallStatement(node: lua.CallStatement): ts.ExpressionStatement {
-        return ts.createExpressionStatement(this.transformCallExpression(node.expression));
+        return this.builder.createExpressionStatement(this.transformCallExpression(node.expression));
     }
 
     private transformCallExpression(node: lua.CallExpression): ts.CallExpression {
-        return ts.createCall(
+        return this.builder.createCall(
             this.transformExpression(node.base),
             undefined,
             node.arguments.map(expression => this.transformExpression(expression)),
@@ -510,14 +513,14 @@ export class Transformer {
         const transformedExpressions = expressions.map(expression => this.transformExpression(expression));
         if (variables.length > 1) {
             return {
-                left: ts.createArrayBindingPattern(
+                left: this.builder.createArrayBindingPattern(
                     transformedVariables.map(
-                        variable => ts.createBindingElement(
+                        variable => this.builder.createBindingElement(
                             undefined,
                             undefined,
                             variable,
                             undefined))),
-                right: ts.createArrayLiteral(transformedExpressions, false),
+                right: this.builder.createArrayLiteral(transformedExpressions, false),
             };
         } else {
             return {
@@ -536,11 +539,11 @@ export class Transformer {
             this.transformType(tag.type) :
             undefined;
 
-        return ts.createVariableStatement(
+        return this.builder.createVariableStatement(
             undefined,
-            ts.createVariableDeclarationList(
+            this.builder.createVariableDeclarationList(
                 [
-                    ts.createVariableDeclaration(
+                    this.builder.createVariableDeclaration(
                         left,
                         type,
                         right,
@@ -556,10 +559,10 @@ export class Transformer {
         const returnNode = returnArguments.length > 0 ?
             returnArguments.length === 1 ?
                 returnArguments[0] :
-                ts.createArrayLiteral(returnArguments, false) :
+                this.builder.createArrayLiteral(returnArguments, false) :
             undefined;
 
-        return ts.createReturn(returnNode);
+        return this.builder.createReturn(returnNode);
     }
 
     private transformFunctionDeclaration(
@@ -571,13 +574,13 @@ export class Transformer {
         const treturnTypes = treturns.map(treturn => this.transformType(treturn.type));
         const type = treturnTypes.length > 0 ?
             treturnTypes.length > 1 ?
-                ts.createTupleTypeNode(treturnTypes) :
+                this.builder.createTupleTypeNode(treturnTypes) :
                 treturnTypes[0] :
-            ts.createKeywordTypeNode(ts.SyntaxKind.VoidKeyword);
+            this.builder.createKeywordTypeNode(ts.SyntaxKind.VoidKeyword);
 
         switch (node.identifier.type) {
             case "Identifier":
-                return ts.createFunctionDeclaration(
+                return this.builder.createFunctionDeclaration(
                     undefined,
                     undefined,
                     undefined,
@@ -585,14 +588,14 @@ export class Transformer {
                     undefined,
                     node.parameters.map(identifier => this.transformParameterDeclaration(identifier, availableTags)),
                     type,
-                    ts.createBlock(
+                    this.builder.createBlock(
                         this.transformBlock(node.body),
                         true,
                     ),
                 );
             case "MemberExpression": {
-                return ts.createExpressionStatement(
-                    ts.createAssignment(
+                return this.builder.createExpressionStatement(
+                    this.builder.createAssignment(
                         this.transformExpression(node.identifier),
                         this.transformFunctionExpression(node),
                     ),
@@ -604,14 +607,14 @@ export class Transformer {
     }
 
     private transformFunctionExpression(node: lua.FunctionExpression | lua.FunctionDeclaration): ts.FunctionExpression {
-        return ts.createFunctionExpression(
+        return this.builder.createFunctionExpression(
             undefined,
             undefined,
             undefined,
             undefined,
             node.parameters.map(parameter => this.transformParameterDeclaration(parameter, [])),
             undefined,
-            ts.createBlock(
+            this.builder.createBlock(
                 this.transformBlock(node.body),
                 true,
             ),
