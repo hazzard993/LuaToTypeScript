@@ -48,7 +48,7 @@ export interface MemberExpression extends Node {
 
 export interface AssignmentStatement extends Node {
     type: "AssignmentStatement";
-    variables: Array<Identifier | MemberExpression>;
+    variables: Array<Identifier | MemberExpression | IndexExpression>;
     init: Expression[];
 }
 

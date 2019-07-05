@@ -216,6 +216,7 @@ export class Transformer {
     }
 
     private transformMemberExpression(node: lua.MemberExpression): ts.PropertyAccessExpression {
+        console.log(node);
         return ts.createPropertyAccess(
             this.transformExpression(node.base),
             this.transformIdentifier(node.identifier),
@@ -400,30 +401,32 @@ export class Transformer {
         return ts.createStringLiteral(node.value);
     }
 
-    // x = 5    (lua.Identifier)
-    // x.x = 5  (lua.MemberExpression)
-    private transformAssignmentExpression<T extends lua.Identifier | lua.MemberExpression>(
-        node: T,
-    ): T extends lua.Identifier ? ts.Identifier : ts.PropertyAccessExpression;
-    private transformAssignmentExpression(
-        node: lua.Identifier | lua.MemberExpression,
-    ): ts.Identifier | ts.PropertyAccessExpression {
-        return node.type === "Identifier"
-            ? this.transformIdentifier(node)
-            : this.transformMemberExpression(node);
+    private transformAssignmentLeftHandSideExpression(
+        node: lua.Identifier | lua.MemberExpression | lua.IndexExpression,
+    ): ts.Identifier | ts.PropertyAccessExpression | ts.ElementAccessExpression {
+        switch (node.type) {
+            case "Identifier":
+                return this.transformIdentifier(node);
+            case "MemberExpression":
+                return this.transformMemberExpression(node);
+            case "IndexExpression":
+                return this.transformIndexExpression(node);
+        }
     }
 
     private transformAssignment(
-        variables: Array<lua.Identifier | lua.MemberExpression>,
+        variables: Array<lua.Identifier | lua.MemberExpression | lua.IndexExpression>,
         expressions: lua.Expression[],
     ): {
-        left: ts.Identifier | ts.PropertyAccessExpression,
+        left: ts.Identifier | ts.PropertyAccessExpression | ts.ElementAccessExpression,
         right: ts.Expression,
     } | {
         left: ts.ArrayLiteralExpression,
         right: ts.ArrayLiteralExpression,
     } {
-        const transformedVariables = variables.map(variable => this.transformAssignmentExpression(variable));
+        const transformedVariables = variables.map(
+            variable => this.transformAssignmentLeftHandSideExpression(variable),
+        );
         const transformedExpressions = expressions.map(expression => this.transformExpression(expression));
         if (variables.length > 1) {
             return {
@@ -461,19 +464,6 @@ export class Transformer {
         );
     }
 
-    private transformVariablesToArrayBindingPattern(identifiers: lua.Identifier[]): ts.ArrayBindingPattern {
-        return ts.createArrayBindingPattern(
-            identifiers.map(identifier => {
-                return ts.createBindingElement(
-                    undefined,
-                    undefined,
-                    ts.createIdentifier(identifier.name),
-                    undefined,
-                );
-            }),
-        );
-    }
-
     private transformLocalBindingPattern(
         variables: lua.Identifier[],
         expressions: lua.Expression[],
@@ -484,7 +474,7 @@ export class Transformer {
         left: ts.ArrayBindingPattern,
         right: ts.ArrayLiteralExpression,
     } {
-        const transformedVariables = variables.map(variable => this.transformAssignmentExpression(variable));
+        const transformedVariables = variables.map(variable => this.transformIdentifier(variable));
         const transformedExpressions = expressions.map(expression => this.transformExpression(expression));
         if (variables.length > 1) {
             return {
