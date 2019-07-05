@@ -374,7 +374,7 @@ export class Transformer {
 
         switch (node.type) {
             case "Identifier":
-                ts.createParameter(
+                return ts.createParameter(
                     undefined,
                     undefined,
                     undefined,
