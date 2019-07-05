@@ -8,11 +8,17 @@ export class Transformer {
 
     private chunk!: lua.Chunk;
     private checker?: ts.TypeChecker;
+    private diagnostics: string[];
 
     constructor(program?: ts.Program) {
         if (program) {
             this.checker = program.getTypeChecker();
         }
+        this.diagnostics = [];
+    }
+
+    public getDiagnostics(): string[] {
+        return this.diagnostics;
     }
 
     public transformChunk(ast: lua.Chunk): ts.Statement[] {
@@ -374,7 +380,21 @@ export class Transformer {
         node: lua.Identifier | lua.VarargLiteral,
         availableTags: tags.Tag[],
     ): ts.ParameterDeclaration {
-        const tparam = helper.getParameterTParam(node, availableTags);
+        const tparams = helper.getParameterTParam(node, availableTags);
+        if (Array.isArray(tparams)) {
+            const name = node.type === "Identifier" ?
+                node.name :
+                node.value;
+            if (tparams.length === 0) {
+                this.diagnostics.push(helper.noLeadingWhitespace`
+                    Parameter ${name} does not have a type signature.
+                    Use "@tparam <type> ${name}" to define this.
+                `);
+            } else {
+                this.diagnostics.push(`Many @tparams found for parameter ${name}. Using the first one.`);
+            }
+        }
+        const tparam: tags.TParamTag | undefined = Array.isArray(tparams) ? tparams[0] : tparams;
         const type = tparam ?
             this.transformType(tparam.type) :
             undefined;

@@ -14,10 +14,18 @@ export function getPreviousNode(chunk: lua.Chunk, node: lua.Node): lua.Node | un
     return undefined;
 }
 
+export function noLeadingWhitespace(strings: readonly string[], ...values: any[]) {
+    const stringWithWhitespace = strings.map((formattedString, index) => {
+        const value = values[index];
+        return `${formattedString}${value || ""}`;
+    }).join("");
+    return stringWithWhitespace.replace(/^(\s*)/gm, "").replace(/\n$/g, "");
+}
+
 export function getParameterTParam(
     parameter: lua.Identifier | lua.VarargLiteral,
     availableTags: tags.Tag[],
-): tags.TParamTag | undefined {
+): tags.TParamTag | tags.TParamTag[] {
     const name = parameter.type === "Identifier" ?
         parameter.name :
         parameter.value;
@@ -26,11 +34,8 @@ export function getParameterTParam(
     ) as tags.TParamTag[];
     if (tparams.length === 1) {
         return tparams[0];
-    } else if (tparams.length <= 0) {
-        console.warn(`No @tparam found for the parameter names "${name}" on line ${parameter.range}.`);
-    } else if (tparams.length > 1) {
-        console.warn(`${tparams.length} @tparams found for "${name}". Using the first.`);
-        return tparams[0];
+    } else {
+        return tparams;
     }
 }
 

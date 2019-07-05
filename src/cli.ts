@@ -9,11 +9,10 @@ export function transpile(args: string[]) {
     const files = args;
     const contents = files.filter(ts.sys.fileExists).map(filename => ts.sys.readFile(filename, "utf8"));
     if (contents.length > 0) {
-        const { sourceFileToUpdate: resultFile, program } = createProgram();
-        const transformer = new Transformer(program);
         contents.forEach(content => {
             if (content) {
-                const tsCode = transformLuaToTypeScript(content.toString(), transformer, resultFile);
+                const { tsCode, diagnostics } = transformLuaToTypeScript(content.toString());
+                diagnostics.map(diagnostic => console.log("⚠ ", diagnostic, "\n"));
                 console.log(tsCode);
             }
         });
@@ -33,7 +32,10 @@ export function transformLuaToTypeScript(
     luaCode: string,
     transformer = new Transformer(),
     sourceFile = ts.createSourceFile("dummy.ts", "", ts.ScriptTarget.ESNext),
-): string {
+): {
+    diagnostics: string[],
+    tsCode: string,
+} {
     const statements = transformLuaCodeToTypeScriptStatements(luaCode, transformer, sourceFile);
     const printer = ts.createPrinter({
         newLine: ts.NewLineKind.LineFeed,
@@ -45,7 +47,10 @@ export function transformLuaToTypeScript(
             sourceFile,
         );
     }).join("\n");
-    return tsCode;
+    return {
+        diagnostics: transformer.getDiagnostics(),
+        tsCode,
+    };
 }
 
 const libCache: { [key: string]: ts.SourceFile } = {};
@@ -96,7 +101,7 @@ export function createProgram(sourceFileCode = "// empty"): { program: ts.Progra
 }
 
 export function getSemanticDiagnosticsFromLuaCode(luaCode: string): readonly ts.Diagnostic[] {
-    const tsCode = transformLuaToTypeScript(luaCode);
+    const { tsCode } = transformLuaToTypeScript(luaCode);
     const { program, sourceFileToUpdate } = createProgram(tsCode);
     return program.getSemanticDiagnostics(sourceFileToUpdate);
 }
