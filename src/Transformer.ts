@@ -330,9 +330,9 @@ export class Transformer {
                 ],
                 ts.NodeFlags.Const,
             ),
-            ts.createCall(this.transformExpression(node.iterators[0]), undefined, []),
+            this.transformExpression(node.iterators[0]),
             ts.createBlock(this.transformBlock(node.body), true),
-        )
+        );
     }
 
     private transformTableKeyString(node: lua.TableKeyString): ts.ObjectLiteralElementLike {
