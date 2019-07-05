@@ -14,7 +14,7 @@ export function getPreviousNode(chunk: lua.Chunk, node: lua.Node): lua.Node | un
     return undefined;
 }
 
-export function getParameterTParams(
+export function getParameterTParam(
     parameter: lua.Identifier | lua.VarargLiteral,
     availableTags: tags.Tag[],
 ): tags.TParamTag | undefined {

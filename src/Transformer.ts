@@ -367,7 +367,7 @@ export class Transformer {
         node: lua.Identifier | lua.VarargLiteral,
         availableTags: tags.Tag[],
     ): ts.ParameterDeclaration {
-        const tparam = helper.getParameterTParams(node, availableTags);
+        const tparam = helper.getParameterTParam(node, availableTags);
         const type = tparam ?
             this.transformType(tparam.type) :
             undefined;
