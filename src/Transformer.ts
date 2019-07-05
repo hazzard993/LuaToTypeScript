@@ -7,10 +7,12 @@ import * as tags from "./tags";
 export class Transformer {
 
     private chunk!: lua.Chunk;
-    private checker: ts.TypeChecker;
+    private checker?: ts.TypeChecker;
 
-    constructor(program: ts.Program) {
-        this.checker = program.getTypeChecker();
+    constructor(program?: ts.Program) {
+        if (program) {
+            this.checker = program.getTypeChecker();
+        }
     }
 
     public transformChunk(ast: lua.Chunk): ts.Statement[] {
@@ -216,7 +218,6 @@ export class Transformer {
     }
 
     private transformMemberExpression(node: lua.MemberExpression): ts.PropertyAccessExpression {
-        console.log(node);
         return ts.createPropertyAccess(
             this.transformExpression(node.base),
             this.transformIdentifier(node.identifier),
