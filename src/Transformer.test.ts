@@ -1,19 +1,7 @@
 import * as luaparse from "luaparse";
-import * as ts from "typescript";
 import * as lua from "./ast";
 import * as cli from "./cli";
 import { Transformer } from "./Transformer";
-
-const nodes = [
-    "local x = 0",
-];
-const localStatementPermutations = [
-    ["local x", "let x;"],
-    ["local x = 0", "let x = 0;"],
-    ["local x, y", "let x, y;"],
-    ["local x, y = 1, 2", "let [x, y] = [1, 2];"],
-    ["local x, y = xy()", "let [x, y] = xy();"],
-];
 
 describe("Check for transformer errors" , () => {
     const transformer = new Transformer();
