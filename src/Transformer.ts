@@ -513,29 +513,17 @@ export class Transformer {
         );
     }
 
-    /**
-     * Returns a FunctionDeclaration when a new function has been defined.
-     *
-     * Otherwise, it returns a FunctionExpression which must be hoisted to an object literal.
-     * @param node A lua function declaration from the AST.
-     */
     private transformFunctionDeclaration(
         node: lua.FunctionDeclaration,
     ): ts.FunctionDeclaration | ts.ExpressionStatement {
         const comments = helper.getComments(this.chunk, node);
         const availableTags = helper.getTags(comments);
-        const tparams = availableTags.filter(currentTag =>
-            currentTag.kind === "treturn" || currentTag.kind === "return",
-        ) as Array<tags.ReturnTag | tags.TReturnTag>;
-        const tparamsTypeNodes = tparams.map(tparam => {
-            return tparam && tparam.kind === "treturn" ?
-                tparam.type === "number" ? ts.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword) :
-                    tparam.type === "string" ? ts.createKeywordTypeNode(ts.SyntaxKind.StringKeyword) :
-                        ts.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword) :
-                ts.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword);
-        });
-        const type = tparamsTypeNodes.length > 0 ?
-            ts.createTupleTypeNode(tparamsTypeNodes) :
+        const treturns = availableTags.filter(currentTag => currentTag.kind === "treturn") as tags.TReturnTag[];
+        const treturnTypes = treturns.map(treturn => this.transformType(treturn.type));
+        const type = treturnTypes.length > 0 ?
+            treturnTypes.length > 1 ?
+                ts.createTupleTypeNode(treturnTypes) :
+                treturnTypes[0] :
             ts.createKeywordTypeNode(ts.SyntaxKind.VoidKeyword);
 
         switch (node.identifier.type) {
