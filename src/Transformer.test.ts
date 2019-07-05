@@ -1,5 +1,7 @@
 import * as luaparse from "luaparse";
+import * as ts from "typescript";
 import * as lua from "./ast";
+import * as cli from "./cli";
 import { Transformer } from "./Transformer";
 
 const nodes = [
@@ -50,6 +52,18 @@ describe("Check for transformer errors" , () => {
         ])("%p can be transformed. (%p)", luaCode => {
             const ast = luaparse.parse(luaCode, { ranges: true }) as lua.Chunk;
             expect(() => transformer.transformChunk(ast)).not.toThrowError();
+        });
+    });
+});
+
+describe("Detect diagnostic errors", () => {
+    describe("LocalStatement type guards", () => {
+        test.each([
+            ["LocalStatement string to number is not assignable", "-- @type number\nlocal x = 'string'"],
+        ])("LocalStatement %p diagnostic", (_, luaCode) => {
+            const diagnostics = cli.getSemanticDiagnosticsFromLuaCode(luaCode);
+            expect(diagnostics.length).toBeGreaterThan(0);
+            expect(diagnostics[0].messageText).toBe(`Type '"string"' is not assignable to type 'number'.`);
         });
     });
 });

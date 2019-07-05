@@ -75,6 +75,11 @@ export function getTags(comments: lua.Comment[]): tags.Tag[] {
                 availableTags.push(tags.createTReturnTag(type, description.join(" ")));
                 break;
             }
+            case "@type": {
+                const [type, ...description] = text;
+                availableTags.push(tags.createTypeTag(type, description.join(" ")));
+                break;
+            }
         }
     });
     return availableTags;

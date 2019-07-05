@@ -1,4 +1,4 @@
-export type Tag = ParamTag | TParamTag | ReturnTag | TReturnTag;
+export type Tag = ParamTag | TParamTag | ReturnTag | TReturnTag | TypeTag;
 
 export interface ParamTag {
     kind: "param";
@@ -52,6 +52,20 @@ export function createTReturnTag(type: string, description: string): TReturnTag 
     return {
         description,
         kind: "treturn",
+        type,
+    };
+}
+
+export interface TypeTag {
+    kind: "type";
+    type: string;
+    description: string;
+}
+
+export function createTypeTag(type: string, description: string): TypeTag {
+    return {
+        description,
+        kind: "type",
         type,
     };
 }

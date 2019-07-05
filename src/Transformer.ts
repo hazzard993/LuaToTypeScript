@@ -505,13 +505,20 @@ export class Transformer {
 
     private transformLocalStatement(node: lua.LocalStatement): ts.VariableStatement {
         const { left, right } = this.transformLocalBindingPattern(node.variables, node.init);
+        const tag = helper
+            .getTags(helper.getComments(this.chunk, node))
+            .find(associatedTag => associatedTag.kind === "type") as tags.TypeTag;
+        const type = tag ?
+            this.transformType(tag.type) :
+            undefined;
+
         return ts.createVariableStatement(
             undefined,
             ts.createVariableDeclarationList(
                 [
                     ts.createVariableDeclaration(
                         left,
-                        undefined,
+                        type,
                         right,
                     ),
                 ],
