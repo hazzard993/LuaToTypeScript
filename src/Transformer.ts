@@ -59,6 +59,8 @@ export class Transformer {
         switch (node.type) {
             case "LocalStatement":
                 return this.transformLocalStatement(node);
+            case "ReturnStatement":
+                return this.transformReturnStatement(node);
             case "FunctionDeclaration":
                 return this.transformFunctionDeclaration(node);
             case "AssignmentStatement":
@@ -71,6 +73,8 @@ export class Transformer {
                 return this.transformForGenericStatement(node);
             case "ForNumericStatement":
                 return this.transformForNumericStatement(node);
+            default:
+                throw new Error(`Unknown Statement Type: ${node!.type}`);
         }
     }
 
@@ -105,7 +109,7 @@ export class Transformer {
             case "IndexExpression":
                 return this.transformIndexExpression(node);
             default:
-                throw new Error(`Unknown type: ${node!.type}`);
+                throw new Error(`Unknown Expression Type: ${node!.type}`);
         }
     }
 
@@ -545,6 +549,17 @@ export class Transformer {
                 ts.NodeFlags.Let,
             ),
         );
+    }
+
+    private transformReturnStatement(node: lua.ReturnStatement): ts.ReturnStatement {
+        const returnArguments = node.arguments.map(argument => this.transformExpression(argument));
+        const returnNode = returnArguments.length > 0 ?
+            returnArguments.length === 1 ?
+                returnArguments[0] :
+                ts.createArrayLiteral(returnArguments, false) :
+            undefined;
+
+        return ts.createReturn(returnNode);
     }
 
     private transformFunctionDeclaration(

@@ -28,6 +28,7 @@ export interface Comment extends Node {
 
 export type Statement = AssignmentStatement
     | LocalStatement
+    | ReturnStatement
     | FunctionDeclaration
     | CallStatement
     | IfStatement
@@ -95,6 +96,11 @@ export interface LocalStatement extends Node {
     type: "LocalStatement";
     variables: Identifier[];
     init: Expression[];
+}
+
+export interface ReturnStatement extends Node {
+    type: "ReturnStatement";
+    arguments: Expression[];
 }
 
 export interface FunctionDeclaration extends Node {

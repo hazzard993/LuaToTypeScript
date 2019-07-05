@@ -9,11 +9,16 @@ export function transpile(args: string[]) {
     const files = args;
     const contents = files.filter(ts.sys.fileExists).map(filename => ts.sys.readFile(filename, "utf8"));
     if (contents.length > 0) {
+        const showSemanticErrors = args.includes("--showSemanticErrors");
         contents.forEach(content => {
             if (content) {
                 const { tsCode, diagnostics } = transformLuaToTypeScript(content.toString());
                 diagnostics.map(diagnostic => console.log("⚠ ", diagnostic, "\n"));
                 console.log(tsCode);
+                if (showSemanticErrors) {
+                    const semanticErrors = getSemanticDiagnosticsTypeScriptCode(tsCode);
+                    semanticErrors.map(error => console.log(error.messageText));
+                }
             }
         });
     }
@@ -102,6 +107,11 @@ export function createProgram(sourceFileCode = "// empty"): { program: ts.Progra
 
 export function getSemanticDiagnosticsFromLuaCode(luaCode: string): readonly ts.Diagnostic[] {
     const { tsCode } = transformLuaToTypeScript(luaCode);
+    const { program, sourceFileToUpdate } = createProgram(tsCode);
+    return program.getSemanticDiagnostics(sourceFileToUpdate);
+}
+
+export function getSemanticDiagnosticsTypeScriptCode(tsCode: string): readonly ts.Diagnostic[] {
     const { program, sourceFileToUpdate } = createProgram(tsCode);
     return program.getSemanticDiagnostics(sourceFileToUpdate);
 }
