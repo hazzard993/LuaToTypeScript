@@ -41,4 +41,15 @@ describe("Check for transformer errors" , () => {
             expect(() => transformer.transformChunk(ast)).not.toThrowError();
         });
     });
+    describe("Function Declarations", () => {
+        test.each([
+            ["function a() end", "FunctionDeclaration"],
+            ["function a(b, c) end", "FunctionDeclaration + Parameters x2"],
+            ["function a(...) end", "FunctionDeclaration + Vararg Parameter"],
+            ["function a(b, c, ...) end", "FunctionDeclaration + Parameters x2 + Vararg Parameter"],
+        ])("%p can be transformed. (%p)", luaCode => {
+            const ast = luaparse.parse(luaCode, { ranges: true }) as lua.Chunk;
+            expect(() => transformer.transformChunk(ast)).not.toThrowError();
+        });
+    });
 });

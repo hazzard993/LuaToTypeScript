@@ -261,13 +261,20 @@ export class Transformer {
     }
 
     private transformType(type: string): ts.TypeNode {
-        switch (type) {
-            case "number":
-                return ts.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword);
-            case "string":
-                return ts.createKeywordTypeNode(ts.SyntaxKind.StringKeyword);
-            default:
-                throw new Error(`Unknown type ${type}`);
+        const types = type.split("|").map(typeString => {
+            switch (typeString) {
+                case "number":
+                    return ts.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword);
+                case "string":
+                    return ts.createKeywordTypeNode(ts.SyntaxKind.StringKeyword);
+                default:
+                    throw new Error(`Unknown type ${typeString}`);
+            }
+        });
+        if (types.length === 1) {
+            return types[0];
+        } else {
+            return ts.createUnionTypeNode(types);
         }
     }
 
