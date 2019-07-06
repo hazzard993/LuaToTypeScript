@@ -13,6 +13,10 @@ export class TsBuilder {
         this.map = new WeakMap();
     }
 
+    public getMap(): WeakMap<ts.Node, lua.Node | undefined> {
+        return this.map;
+    }
+
     public createNumericLiteral(value: string, original?: lua.Node): ts.NumericLiteral {
         const tsNode = ts.createNumericLiteral(value);
         this.map.set(tsNode, original);
@@ -99,9 +103,9 @@ export class TsBuilder {
     }
 
     public createParameter(
-        decorators: readonly ts.Decorator[],
-        modifiers: readonly ts.Modifier[],
-        dotDotDotToken: ts.Token<ts.SyntaxKind.DotDotDotToken>,
+        decorators: readonly ts.Decorator[] | undefined,
+        modifiers: readonly ts.Modifier[] | undefined,
+        dotDotDotToken: ts.Token<ts.SyntaxKind.DotDotDotToken> | undefined,
         name: string | ts.Identifier | ts.ObjectBindingPattern | ts.ArrayBindingPattern,
         questionToken?: Parameters<typeof ts.createParameter>[4],
         type?: ts.TypeNode,
@@ -152,7 +156,7 @@ export class TsBuilder {
         expression: ts.Expression,
         name: string | ts.Identifier,
         original?: lua.Node,
-    ): ts.UnaryExpression {
+    ): ts.PropertyAccessExpression {
         const tsNode = ts.createPropertyAccess(expression, name);
         this.map.set(tsNode, original);
         return tsNode;
@@ -254,7 +258,7 @@ export class TsBuilder {
     }
 
     public createBindingElement(
-        dotDotDotToken: ts.Token<ts.SyntaxKind.DotDotDotToken>,
+        dotDotDotToken: ts.Token<ts.SyntaxKind.DotDotDotToken> | undefined,
         propertyName: Parameters<typeof ts.createBindingElement>[1],
         name: Parameters<typeof ts.createBindingElement>[2],
         initializer?: ts.Expression,
@@ -271,56 +275,112 @@ export class TsBuilder {
         return tsNode;
     }
 
-    public createPropertyAssignment(name: any, arg1: ts.Expression): ts.ObjectLiteralElementLike {
-        const tsNode = ts.createPropertyAssignment(kind);
+    public createPropertyAssignment(
+        name: string | ts.ComputedPropertyName | ts.Identifier | ts.StringLiteral | ts.NumericLiteral,
+        initializer: ts.Expression,
+        original?: lua.Node,
+    ): ts.PropertyAssignment {
+        const tsNode = ts.createPropertyAssignment(name, initializer);
         this.map.set(tsNode, original);
         return tsNode;
     }
 
-    public createExpressionStatement(arg0: any): ts.ExpressionStatement {
-        const tsNode = ts.createExpressionStatement(kind);
+    public createExpressionStatement(expression: ts.Expression, original?: lua.Node): ts.ExpressionStatement {
+        const tsNode = ts.createExpressionStatement(expression);
         this.map.set(tsNode, original);
         return tsNode;
     }
 
-    public createCall(arg0: ts.Expression, undefined: undefined, arg2: ts.Expression[]): ts.CallExpression {
-        const tsNode = ts.createCall(kind);
+    public createCall(
+        expression: ts.Expression,
+        typeArguments: readonly ts.TypeNode[] | undefined,
+        argumentsArray: readonly ts.Expression[] | undefined,
+        original?: lua.Node,
+    ): ts.CallExpression {
+        const tsNode = ts.createCall(expression, typeArguments, argumentsArray);
         this.map.set(tsNode, original);
         return tsNode;
     }
 
-    public createVariableStatement(undefined: undefined, arg1: any): ts.VariableStatement {
-        const tsNode = ts.createVariableStatement(kind);
+    public createVariableStatement(
+        modifiers: readonly ts.Modifier[] | undefined,
+        declarationList: ts.VariableDeclarationList | readonly ts.VariableDeclaration[],
+        original?: lua.Node,
+    ): ts.VariableStatement {
+        const tsNode = ts.createVariableStatement(modifiers, declarationList);
         this.map.set(tsNode, original);
         return tsNode;
     }
 
-    public createReturn(returnNode: ts.Expression | undefined): ts.ReturnStatement {
-        const tsNode = ts.createReturn(kind);
+    public createReturn(expression?: ts.Expression, original?: lua.Node): ts.ReturnStatement {
+        const tsNode = ts.createReturn(expression);
         this.map.set(tsNode, original);
         return tsNode;
     }
 
-    public createTupleTypeNode(treturnTypes: ts.TypeNode[]) {
-        const tsNode = ts.createTupleTypeNode(kind);
+    public createTupleTypeNode(
+        elementTypes: readonly ts.TypeNode[],
+        original?: lua.Node,
+    ): ts.TupleTypeNode {
+        const tsNode = ts.createTupleTypeNode(elementTypes);
         this.map.set(tsNode, original);
         return tsNode;
     }
 
-    public createFunctionDeclaration(undefined: undefined, undefined: undefined, undefined: undefined, arg3: ts.Identifier, undefined: undefined, arg5: ts.ParameterDeclaration[], type: any, arg7: ts.Block): ts.FunctionDeclaration | ts.ExpressionStatement {
-        const tsNode = ts.createFunctionDeclaration(kind);
+    public createFunctionDeclaration(
+        decorators: readonly ts.Decorator[] | undefined,
+        modifiers: readonly ts.Modifier[] | undefined,
+        asteriskToken: ts.Token<ts.SyntaxKind.AsteriskToken> | undefined,
+        name: string | ts.Identifier | undefined,
+        typeParameters: readonly ts.TypeParameterDeclaration[] | undefined,
+        parameters: readonly ts.ParameterDeclaration[],
+        type: ts.TypeNode | undefined,
+        body: ts.Block | undefined,
+        original?: lua.Node,
+    ): ts.FunctionDeclaration {
+        const tsNode = ts.createFunctionDeclaration(
+            decorators,
+            modifiers,
+            asteriskToken,
+            name,
+            typeParameters,
+            parameters,
+            type,
+            body,
+        );
         this.map.set(tsNode, original);
         return tsNode;
     }
 
-    public createAssignment(arg0: ts.Expression, arg1: ts.FunctionExpression): any {
-        const tsNode = ts.createAssignment(kind);
+    public createAssignment(
+        left: ts.Expression,
+        right: ts.Expression,
+        original?: lua.Node,
+    ): ts.BinaryExpression | ts.DestructuringAssignment {
+        const tsNode = ts.createAssignment(left, right);
         this.map.set(tsNode, original);
         return tsNode;
     }
 
-    public createFunctionExpression(undefined: undefined, undefined: undefined, undefined: undefined, undefined: undefined, arg4: ts.ParameterDeclaration[], undefined: undefined, arg6: ts.Block): ts.FunctionExpression {
-        const tsNode = ts.createFunctionExpression(kind);
+    public createFunctionExpression(
+        modifiers: readonly ts.Modifier[] | undefined,
+        asteriskToken: ts.Token<ts.SyntaxKind.AsteriskToken> | undefined,
+        name: string | ts.Identifier | undefined,
+        typeParameters: readonly ts.TypeParameterDeclaration[] | undefined,
+        parameters: readonly ts.ParameterDeclaration[] | undefined,
+        type: ts.TypeNode | undefined,
+        body: ts.Block,
+        original?: lua.Node,
+    ): ts.FunctionExpression {
+        const tsNode = ts.createFunctionExpression(
+            modifiers,
+            asteriskToken,
+            name,
+            typeParameters,
+            parameters,
+            type,
+            body,
+        );
         this.map.set(tsNode, original);
         return tsNode;
     }
