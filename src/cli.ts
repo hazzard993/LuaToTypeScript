@@ -5,11 +5,9 @@ import * as ts from "typescript";
 import * as lua from "./ast";
 import { Transformer } from "./Transformer";
 
-export function transpile(args: string[]) {
-    const files = args;
+export function transpile(files: string[], showSemanticErrors: boolean) {
     const contents = files.filter(ts.sys.fileExists).map(filename => ts.sys.readFile(filename, "utf8"));
     if (contents.length > 0) {
-        const showSemanticErrors = args.includes("--showSemanticErrors");
         contents.forEach(content => {
             if (content) {
                 const {

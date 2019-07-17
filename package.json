@@ -9,6 +9,9 @@
   "bin": {
     "ltts": "dist/index.js"
   },
+  "files": [
+    "dist/*.js"
+  ],
   "main": "dist/index",
   "keywords": [],
   "author": "",
