@@ -31,6 +31,16 @@ function func(x, y) end
 function func(x: number, y: number) {}
 ```
 
+`@treturn` can be used too.
+
+```lua
+-- @treturn number
+-- @treturn number
+function xy()
+    return 4, 5
+end
+```
+
 This can also be applied to variables as well.
 
 ```lua
