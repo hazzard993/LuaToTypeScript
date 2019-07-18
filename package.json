@@ -14,7 +14,11 @@
         "dist/*.js"
     ],
     "main": "dist/index",
-    "keywords": [],
+    "keywords": [
+        "lua",
+        "typescript",
+        "transpiler"
+    ],
     "author": "",
     "license": "ISC",
     "devDependencies": {
