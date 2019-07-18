@@ -17,37 +17,4 @@ ltts main.lua
 ltts a.lua b.lua c.lua ...
 ```
 
-## Features
-
-Code documented with [LDoc](https://stevedonovan.github.io/ldoc/) is used for typing information.
-
-```lua
--- @tparam number x
--- @tparam number y
-function func(x, y) end
-```
-
-```ts
-function func(x: number, y: number) {}
-```
-
-`@treturn` can be used too.
-
-```lua
--- @treturn number
--- @treturn number
-function xy()
-    return 4, 5
-end
-```
-
-This can also be applied to variables as well.
-
-```lua
--- @type number
-local x = "string"
-```
-
-```ts
-let x: number = "string"; // TypeScript now sees this as a semantic error
-```
+See the new features added in the [CHANGELOG](CHANGELOG.md).
