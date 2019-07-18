@@ -47,6 +47,8 @@ export class Transformer {
         const remainingStatements = statements.map(statement => this.transformStatement(statement));
         result.push(...remainingStatements);
 
+        this.blockScopeLevel--;
+
         return result;
     }
 
@@ -672,6 +674,14 @@ export class Transformer {
 
         const comments = helper.getComments(this.chunk, node);
         const availableTags = helper.getTags(comments);
+        const treturns = availableTags.filter(currentTag => currentTag.kind === "treturn") as tags.TReturnTag[];
+        const treturnTypes = treturns.map(treturn => this.transformType(treturn.type));
+        const type =
+            treturnTypes.length > 0
+                ? treturnTypes.length > 1
+                    ? this.builder.createTupleTypeNode(treturnTypes)
+                    : treturnTypes[0]
+                : this.builder.createKeywordTypeNode(ts.SyntaxKind.VoidKeyword);
 
         return this.builder.createMethod(
             undefined,
@@ -681,7 +691,7 @@ export class Transformer {
             undefined,
             undefined,
             node.parameters.map(identifier => this.transformParameterDeclaration(identifier, availableTags)),
-            undefined,
+            type,
             ts.createBlock(this.transformBlock(node.body)),
             node
         );
