@@ -15,7 +15,7 @@ let x = 0;
 function func() {
     return 5;
 }
-export = 0;
+export = x;
 ```
 
 And `@classmod` generates a TypeScript class.
