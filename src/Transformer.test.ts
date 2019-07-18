@@ -3,7 +3,7 @@ import * as lua from "./ast";
 import * as cli from "./cli";
 import { Transformer } from "./Transformer";
 
-describe("Check for transformer errors" , () => {
+describe("Check for transformer errors", () => {
     const transformer = new Transformer();
     describe("Local Statements", () => {
         test.each([
@@ -46,12 +46,13 @@ describe("Check for transformer errors" , () => {
 
 describe("Detect diagnostic errors", () => {
     describe("LocalStatement type guards", () => {
-        test.each([
-            ["LocalStatement string to number is not assignable", "-- @type number\nlocal x = 'string'"],
-        ])("LocalStatement %p diagnostic", (_, luaCode) => {
-            const diagnostics = cli.getSemanticDiagnosticsFromLuaCode(luaCode);
-            expect(diagnostics.length).toBeGreaterThan(0);
-            expect(diagnostics[0].messageText).toBe(`Type '"string"' is not assignable to type 'number'.`);
-        });
+        test.each([["LocalStatement string to number is not assignable", "-- @type number\nlocal x = 'string'"]])(
+            "LocalStatement %p diagnostic",
+            (_, luaCode) => {
+                const diagnostics = cli.getSemanticDiagnosticsFromLuaCode(luaCode);
+                expect(diagnostics.length).toBeGreaterThan(0);
+                expect(diagnostics[0].messageText).toBe(`Type '"string"' is not assignable to type 'number'.`);
+            }
+        );
     });
 });

@@ -6,7 +6,6 @@ interface TsBuilderAssociations {
 }
 
 export class TsBuilder {
-
     private map: WeakMap<ts.Node, lua.Node | undefined>;
 
     constructor() {
@@ -69,7 +68,7 @@ export class TsBuilder {
         expression: ts.Expression,
         thenStatement: ts.Statement,
         elseStatement?: ts.Statement,
-        original?: lua.Node,
+        original?: lua.Node
     ): ts.IfStatement {
         const tsNode = ts.createIf(expression, thenStatement, elseStatement);
         this.map.set(tsNode, original);
@@ -85,7 +84,7 @@ export class TsBuilder {
     public createArrayLiteral(
         elements?: readonly ts.Expression[],
         multiLine?: boolean,
-        original?: lua.Node,
+        original?: lua.Node
     ): ts.ArrayLiteralExpression {
         const tsNode = ts.createArrayLiteral(elements, multiLine);
         this.map.set(tsNode, original);
@@ -95,7 +94,7 @@ export class TsBuilder {
     public createObjectLiteral(
         properties?: readonly ts.ObjectLiteralElementLike[],
         multiLine?: boolean,
-        original?: lua.Node,
+        original?: lua.Node
     ): ts.ObjectLiteralExpression {
         const tsNode = ts.createObjectLiteral(properties, multiLine);
         this.map.set(tsNode, original);
@@ -110,7 +109,7 @@ export class TsBuilder {
         questionToken?: Parameters<typeof ts.createParameter>[4],
         type?: ts.TypeNode,
         initializer?: ts.Expression,
-        original?: lua.Node,
+        original?: lua.Node
     ): ts.ParameterDeclaration {
         const tsNode = ts.createParameter(
             decorators,
@@ -119,7 +118,7 @@ export class TsBuilder {
             name,
             questionToken,
             type,
-            initializer,
+            initializer
         );
         this.map.set(tsNode, original);
         return tsNode;
@@ -128,7 +127,7 @@ export class TsBuilder {
     public createElementAccess(
         expression: ts.Expression,
         index: number | ts.Expression,
-        original?: lua.Node,
+        original?: lua.Node
     ): ts.ElementAccessExpression {
         const tsNode = ts.createElementAccess(expression, index);
         this.map.set(tsNode, original);
@@ -145,7 +144,7 @@ export class TsBuilder {
         left: ts.Expression,
         operator: Parameters<typeof ts.createBinary>[1],
         right: ts.Expression,
-        original?: lua.Node,
+        original?: lua.Node
     ): ts.BinaryExpression {
         const tsNode = ts.createBinary(left, operator, right);
         this.map.set(tsNode, original);
@@ -155,7 +154,7 @@ export class TsBuilder {
     public createPropertyAccess(
         expression: ts.Expression,
         name: string | ts.Identifier,
-        original?: lua.Node,
+        original?: lua.Node
     ): ts.PropertyAccessExpression {
         const tsNode = ts.createPropertyAccess(expression, name);
         this.map.set(tsNode, original);
@@ -165,7 +164,7 @@ export class TsBuilder {
     public createPrefix(
         operator: ts.PrefixUnaryOperator,
         operand: ts.Expression,
-        original?: lua.Node,
+        original?: lua.Node
     ): ts.PrefixUnaryExpression {
         const tsNode = ts.createPrefix(operator, operand);
         this.map.set(tsNode, original);
@@ -174,7 +173,7 @@ export class TsBuilder {
 
     public createKeywordTypeNode(
         kind: Parameters<typeof ts.createKeywordTypeNode>[0],
-        original?: lua.Node,
+        original?: lua.Node
     ): ts.KeywordTypeNode {
         const tsNode = ts.createKeywordTypeNode(kind);
         this.map.set(tsNode, original);
@@ -190,7 +189,7 @@ export class TsBuilder {
     public createPostfix(
         operand: ts.Expression,
         operator: ts.PostfixUnaryOperator,
-        original?: lua.Node,
+        original?: lua.Node
     ): ts.PostfixUnaryExpression {
         const tsNode = ts.createPostfix(operand, operator);
         this.map.set(tsNode, original);
@@ -208,7 +207,7 @@ export class TsBuilder {
         condition: ts.Expression,
         incrementor: ts.Expression,
         statement: ts.Statement,
-        original?: lua.Node,
+        original?: lua.Node
     ): ts.ForStatement {
         const tsNode = ts.createFor(initializer, condition, incrementor, statement);
         this.map.set(tsNode, original);
@@ -218,7 +217,7 @@ export class TsBuilder {
     public createVariableDeclarationList(
         declarations: readonly ts.VariableDeclaration[],
         flags?: ts.NodeFlags,
-        original?: lua.Node,
+        original?: lua.Node
     ): ts.VariableDeclarationList {
         const tsNode = ts.createVariableDeclarationList(declarations, flags);
         this.map.set(tsNode, original);
@@ -229,7 +228,7 @@ export class TsBuilder {
         name: string | ts.Identifier | ts.ObjectBindingPattern | ts.ArrayBindingPattern,
         type?: ts.TypeNode,
         initializer?: ts.Expression,
-        original?: lua.Node,
+        original?: lua.Node
     ): ts.VariableDeclaration {
         const tsNode = ts.createVariableDeclaration(name, type, initializer);
         this.map.set(tsNode, original);
@@ -241,7 +240,7 @@ export class TsBuilder {
         initializer: ts.Expression | ts.VariableDeclarationList,
         expression: ts.Expression,
         statement: ts.Statement,
-        original?: lua.Node,
+        original?: lua.Node
     ): ts.ForOfStatement {
         const tsNode = ts.createForOf(awaitModifier, initializer, expression, statement);
         this.map.set(tsNode, original);
@@ -250,7 +249,7 @@ export class TsBuilder {
 
     public createArrayBindingPattern(
         elements: readonly ts.ArrayBindingElement[],
-        original?: lua.Node,
+        original?: lua.Node
     ): ts.ArrayBindingPattern {
         const tsNode = ts.createArrayBindingPattern(elements);
         this.map.set(tsNode, original);
@@ -262,7 +261,7 @@ export class TsBuilder {
         propertyName: Parameters<typeof ts.createBindingElement>[1],
         name: Parameters<typeof ts.createBindingElement>[2],
         initializer?: ts.Expression,
-        original?: lua.Node,
+        original?: lua.Node
     ): ts.BindingElement {
         const tsNode = ts.createBindingElement(dotDotDotToken, propertyName, name, initializer);
         this.map.set(tsNode, original);
@@ -278,7 +277,7 @@ export class TsBuilder {
     public createPropertyAssignment(
         name: string | ts.ComputedPropertyName | ts.Identifier | ts.StringLiteral | ts.NumericLiteral,
         initializer: ts.Expression,
-        original?: lua.Node,
+        original?: lua.Node
     ): ts.PropertyAssignment {
         const tsNode = ts.createPropertyAssignment(name, initializer);
         this.map.set(tsNode, original);
@@ -295,7 +294,7 @@ export class TsBuilder {
         expression: ts.Expression,
         typeArguments: readonly ts.TypeNode[] | undefined,
         argumentsArray: readonly ts.Expression[] | undefined,
-        original?: lua.Node,
+        original?: lua.Node
     ): ts.CallExpression {
         const tsNode = ts.createCall(expression, typeArguments, argumentsArray);
         this.map.set(tsNode, original);
@@ -305,7 +304,7 @@ export class TsBuilder {
     public createVariableStatement(
         modifiers: readonly ts.Modifier[] | undefined,
         declarationList: ts.VariableDeclarationList | readonly ts.VariableDeclaration[],
-        original?: lua.Node,
+        original?: lua.Node
     ): ts.VariableStatement {
         const tsNode = ts.createVariableStatement(modifiers, declarationList);
         this.map.set(tsNode, original);
@@ -318,10 +317,7 @@ export class TsBuilder {
         return tsNode;
     }
 
-    public createTupleTypeNode(
-        elementTypes: readonly ts.TypeNode[],
-        original?: lua.Node,
-    ): ts.TupleTypeNode {
+    public createTupleTypeNode(elementTypes: readonly ts.TypeNode[], original?: lua.Node): ts.TupleTypeNode {
         const tsNode = ts.createTupleTypeNode(elementTypes);
         this.map.set(tsNode, original);
         return tsNode;
@@ -336,7 +332,7 @@ export class TsBuilder {
         parameters: readonly ts.ParameterDeclaration[],
         type: ts.TypeNode | undefined,
         body: ts.Block | undefined,
-        original?: lua.Node,
+        original?: lua.Node
     ): ts.FunctionDeclaration {
         const tsNode = ts.createFunctionDeclaration(
             decorators,
@@ -346,7 +342,7 @@ export class TsBuilder {
             typeParameters,
             parameters,
             type,
-            body,
+            body
         );
         this.map.set(tsNode, original);
         return tsNode;
@@ -355,7 +351,7 @@ export class TsBuilder {
     public createAssignment(
         left: ts.Expression,
         right: ts.Expression,
-        original?: lua.Node,
+        original?: lua.Node
     ): ts.BinaryExpression | ts.DestructuringAssignment {
         const tsNode = ts.createAssignment(left, right);
         this.map.set(tsNode, original);
@@ -370,7 +366,7 @@ export class TsBuilder {
         parameters: readonly ts.ParameterDeclaration[] | undefined,
         type: ts.TypeNode | undefined,
         body: ts.Block,
-        original?: lua.Node,
+        original?: lua.Node
     ): ts.FunctionExpression {
         const tsNode = ts.createFunctionExpression(
             modifiers,
@@ -379,7 +375,7 @@ export class TsBuilder {
             typeParameters,
             parameters,
             type,
-            body,
+            body
         );
         this.map.set(tsNode, original);
         return tsNode;

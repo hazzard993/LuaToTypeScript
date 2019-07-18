@@ -2,35 +2,33 @@ import * as lua from "./ast";
 import * as tags from "./tags";
 
 export function getPreviousNode(chunk: lua.Chunk, node: lua.Node): lua.Node | undefined {
-    let previousNode: lua.Node;
+    let previousNode: lua.Node | undefined;
     for (const statement of chunk.body) {
         if (statement === node) {
-            previousNode = statement;
-        } else {
-            // @ts-ignore
             return previousNode;
+        } else {
+            previousNode = statement;
         }
     }
-    return undefined;
 }
 
 export function noLeadingWhitespace(strings: readonly string[], ...values: any[]) {
-    const stringWithWhitespace = strings.map((formattedString, index) => {
-        const value = values[index];
-        return `${formattedString}${value || ""}`;
-    }).join("");
+    const stringWithWhitespace = strings
+        .map((formattedString, index) => {
+            const value = values[index];
+            return `${formattedString}${value || ""}`;
+        })
+        .join("");
     return stringWithWhitespace.replace(/^(\s*)/gm, "").replace(/\n$/g, "");
 }
 
 export function getParameterTParam(
     parameter: lua.Identifier | lua.VarargLiteral,
-    availableTags: tags.Tag[],
+    availableTags: tags.Tag[]
 ): tags.TParamTag | tags.TParamTag[] {
-    const name = parameter.type === "Identifier" ?
-        parameter.name :
-        parameter.value;
+    const name = parameter.type === "Identifier" ? parameter.name : parameter.value;
     const tparams = availableTags.filter(
-        currentTag => currentTag.kind === "tparam" && currentTag.name === name,
+        currentTag => currentTag.kind === "tparam" && currentTag.name === name
     ) as tags.TParamTag[];
     if (tparams.length === 1) {
         return tparams[0];
@@ -40,15 +38,19 @@ export function getParameterTParam(
 }
 
 export function getCommentsAsString(chunk: lua.Chunk, node: lua.Node): string {
-    return getComments(chunk, node).join("\n");
+    return getComments(chunk, node)
+        .map(comment => comment.value)
+        .join(" ");
 }
 
 export function getComments(chunk: lua.Chunk, node: lua.Node): lua.Comment[] {
     const previousNode = getPreviousNode(chunk, node);
     const comments: lua.Comment[] = [];
     for (const comment of chunk.comments) {
+        const [nodeBegin] = node.range;
+        const [commentBegin, commendEnd] = comment.range;
         const min = previousNode ? previousNode.range[1] : 0;
-        if (comment.range[0] >= min && comment.range[1] <= node.range[0]) {
+        if (commentBegin >= min && commendEnd <= nodeBegin) {
             comments.push(comment);
         }
     }

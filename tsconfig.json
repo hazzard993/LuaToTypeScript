@@ -6,12 +6,7 @@
         "module": "commonjs",
         "downlevelIteration": true,
         "strict": true,
-        "types": [
-            "jest",
-            "node"
-        ]
+        "types": ["jest", "node"]
     },
-    "exclude": [
-        "src/*.test.ts"
-    ]
+    "exclude": ["src/*.test.ts"]
 }

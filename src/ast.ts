@@ -1,6 +1,7 @@
 export type TextRange = [number, number];
 
-export type NodeTypes = "Chunk"
+export type NodeTypes =
+    | "Chunk"
     | "Comment"
     | "Identifier"
     | "AssignmentStatement"
@@ -26,7 +27,8 @@ export interface Comment extends Node {
     value: string;
 }
 
-export type Statement = AssignmentStatement
+export type Statement =
+    | AssignmentStatement
     | LocalStatement
     | ReturnStatement
     | FunctionDeclaration
@@ -150,20 +152,7 @@ export interface LogicalExpression extends Node {
 
 export interface BinaryExpression extends Node {
     type: "BinaryExpression";
-    operator: "+"
-        | "-"
-        | "*"
-        | "/"
-        | "%"
-        | "^"
-        | "-"
-        | "=="
-        | "~="
-        | ">"
-        | "<"
-        | ">="
-        | "<="
-        | "..";
+    operator: "+" | "-" | "*" | "/" | "%" | "^" | "-" | "==" | "~=" | ">" | "<" | ">=" | "<=" | "..";
     left: Expression;
     right: Expression;
 }
@@ -211,7 +200,8 @@ export interface IndexExpression extends Node {
     index: Expression;
 }
 
-export type Expression = NumericLiteral
+export type Expression =
+    | NumericLiteral
     | StringLiteral
     | Identifier
     | TableConstructorExpression

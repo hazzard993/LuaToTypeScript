@@ -27,12 +27,7 @@ export function transpile(files: string[], showSemanticErrors: boolean): Transpi
             };
         })
         .map(({ contents, fileName }) => {
-            const {
-                ast,
-                statements,
-                tsCode,
-                diagnostics,
-            } = transformLuaToTypeScript(contents.toString());
+            const { ast, statements, tsCode, diagnostics } = transformLuaToTypeScript(contents.toString());
             if (showSemanticErrors) {
                 const semanticErrors = getSemanticDiagnosticsTypeScriptCode(tsCode);
                 diagnostics.push(...semanticErrors.map(error => error.messageText.toString()));
@@ -52,12 +47,12 @@ export function transpile(files: string[], showSemanticErrors: boolean): Transpi
 export function transformLuaCodeToTypeScriptStatements(
     luaCode: string,
     transformer: Transformer,
-    sourceFile: ts.SourceFile,
+    sourceFile: ts.SourceFile
 ): {
-    ast: WeakMap<ts.Node, lua.Node | undefined>,
-    statements: ts.Statement[],
- } {
-    const luaAst = luaparse.parse(luaCode, {ranges: true}) as lua.Chunk;
+    ast: WeakMap<ts.Node, lua.Node | undefined>;
+    statements: ts.Statement[];
+} {
+    const luaAst = luaparse.parse(luaCode, { ranges: true }) as lua.Chunk;
     const statements = transformer.transformChunk(luaAst);
     const ast = transformer.getBuilder().getMap();
     return {
@@ -69,27 +64,22 @@ export function transformLuaCodeToTypeScriptStatements(
 export function transformLuaToTypeScript(
     luaCode: string,
     transformer = new Transformer(),
-    sourceFile = ts.createSourceFile("dummy.ts", "", ts.ScriptTarget.ESNext),
+    sourceFile = ts.createSourceFile("dummy.ts", "", ts.ScriptTarget.ESNext)
 ): {
-    ast: WeakMap<ts.Node, lua.Node | undefined>,
-    diagnostics: string[],
-    statements: ts.Statement[],
-    tsCode: string,
+    ast: WeakMap<ts.Node, lua.Node | undefined>;
+    diagnostics: string[];
+    statements: ts.Statement[];
+    tsCode: string;
 } {
-    const {
-        ast,
-        statements,
-    } = transformLuaCodeToTypeScriptStatements(luaCode, transformer, sourceFile);
+    const { ast, statements } = transformLuaCodeToTypeScriptStatements(luaCode, transformer, sourceFile);
     const printer = ts.createPrinter({
         newLine: ts.NewLineKind.LineFeed,
     });
-    const tsCode = statements.map(statement => {
-        return printer.printNode(
-            ts.EmitHint.Unspecified,
-            statement,
-            sourceFile,
-        );
-    }).join("\n");
+    const tsCode = statements
+        .map(statement => {
+            return printer.printNode(ts.EmitHint.Unspecified, statement, sourceFile);
+        })
+        .join("\n");
     return {
         ast,
         diagnostics: transformer.getDiagnostics(),
@@ -100,14 +90,14 @@ export function transformLuaToTypeScript(
 
 const libCache: { [key: string]: ts.SourceFile } = {};
 
-export function createProgram(sourceFileCode = "// empty"): { program: ts.Program, sourceFileToUpdate: ts.SourceFile } {
+export function createProgram(sourceFileCode = "// empty"): { program: ts.Program; sourceFileToUpdate: ts.SourceFile } {
     const sourceFileName = "someFileName.ts";
     const resultFile = ts.createSourceFile(
         sourceFileName,
         sourceFileCode,
         ts.ScriptTarget.Latest,
         false,
-        ts.ScriptKind.TS,
+        ts.ScriptKind.TS
     );
     return {
         program: ts.createProgram({

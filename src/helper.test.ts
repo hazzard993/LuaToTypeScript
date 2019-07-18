@@ -10,15 +10,12 @@ describe("Test getCommentsAsString", () => {
         ["i = 0,--second statement comment,i = 0", 1, "second statement comment"],
         ["--ignored comment,i = 0,--second statement comment,i = 0", 1, "second statement comment"],
         ["--[[square bracket comment]]i = 0", 0, "square bracket comment"],
-    ])(
-        "Get comments from %s",
-        (code: string, nodeIndex: number, fullCommentText: string) => {
-            code = code.replace(/,/g, "\n");
-            const ast = luaparse.parse(code, { ranges: true }) as lua.Chunk;
-            const commentText = helper.getCommentsAsString(ast, ast.body[nodeIndex]);
-            expect(commentText).toEqual(fullCommentText);
-        },
-    );
+    ])("Get comments from %s", (code: string, nodeIndex: number, fullCommentText: string) => {
+        code = code.replace(/,/g, "\n");
+        const ast = luaparse.parse(code, { ranges: true }) as lua.Chunk;
+        const commentText = helper.getCommentsAsString(ast, ast.body[nodeIndex]);
+        expect(commentText).toEqual(fullCommentText);
+    });
 });
 
 describe("Test getCommentsAsString", () => {
@@ -29,13 +26,10 @@ describe("Test getCommentsAsString", () => {
         ["i = 0,--second statement comment,i = 0", 1, "second statement comment"],
         ["--ignored comment,i = 0,--second statement comment,i = 0", 1, "second statement comment"],
         ["--[[square bracket comment]]i = 0", 0, "square bracket comment"],
-    ])(
-        "Get comments from %s",
-        (code: string, nodeIndex: number, fullCommentText: string) => {
-            code = code.replace(/,/g, "\n");
-            const ast = luaparse.parse(code, { ranges: true }) as lua.Chunk;
-            const commentText = helper.getCommentsAsString(ast, ast.body[nodeIndex]);
-            expect(commentText).toEqual(fullCommentText);
-        },
-    );
+    ])("Get comments from %s", (code: string, nodeIndex: number, fullCommentText: string) => {
+        code = code.replace(/,/g, "\n");
+        const ast = luaparse.parse(code, { ranges: true }) as lua.Chunk;
+        const commentText = helper.getCommentsAsString(ast, ast.body[nodeIndex]);
+        expect(commentText).toEqual(fullCommentText);
+    });
 });

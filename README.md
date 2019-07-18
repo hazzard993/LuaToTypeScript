@@ -49,5 +49,5 @@ local x = "string"
 ```
 
 ```ts
-let x: number = "string";   // TypeScript now sees this as a semantic error
+let x: number = "string"; // TypeScript now sees this as a semantic error
 ```
