@@ -8,6 +8,7 @@ describe("Test getCommentsAsString", () => {
         ["--comment,i = 0", 0, "comment"],
         ["--two,--comments,i = 0", 0, "two comments"],
         ["i = 0,--second statement comment,i = 0", 1, "second statement comment"],
+        ["--first statement comment,i = 0,--ignored comment,i = 0", 0, "first statement comment"],
         ["--ignored comment,i = 0,--second statement comment,i = 0", 1, "second statement comment"],
         ["--[[square bracket comment]]i = 0", 0, "square bracket comment"],
     ])("Get comments from %s", (code: string, nodeIndex: number, fullCommentText: string) => {

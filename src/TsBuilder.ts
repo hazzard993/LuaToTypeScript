@@ -380,4 +380,57 @@ export class TsBuilder {
         this.map.set(tsNode, original);
         return tsNode;
     }
+
+    public createClassDeclaration(
+        decorators: readonly ts.Decorator[] | undefined,
+        modifiers: readonly ts.Modifier[] | undefined,
+        name: string | ts.Identifier | undefined,
+        typeParameters: readonly ts.TypeParameterDeclaration[] | undefined,
+        heritageClauses: readonly ts.HeritageClause[] | undefined,
+        members: readonly ts.ClassElement[],
+        original: lua.Node
+    ): ts.ClassDeclaration {
+        const tsNode = ts.createClassDeclaration(decorators, modifiers, name, typeParameters, heritageClauses, members);
+        this.map.set(tsNode, original);
+        return tsNode;
+    }
+
+    public createExportAssignment(
+        decorators: readonly ts.Decorator[] | undefined,
+        modifiers: readonly ts.Modifier[] | undefined,
+        isExportEquals: boolean | undefined,
+        expression: ts.Expression,
+        original: lua.Node
+    ): ts.ExportAssignment {
+        const tsNode = ts.createExportAssignment(decorators, modifiers, isExportEquals, expression);
+        this.map.set(tsNode, original);
+        return tsNode;
+    }
+
+    public createMethod(
+        decorators: readonly ts.Decorator[] | undefined,
+        modifiers: readonly ts.Modifier[] | undefined,
+        asteriskToken: ts.Token<ts.SyntaxKind.AsteriskToken> | undefined,
+        name: string | ts.Identifier | ts.StringLiteral | ts.NumericLiteral | ts.ComputedPropertyName,
+        questionToken: ts.QuestionToken | undefined,
+        typeParameters: readonly ts.TypeParameterDeclaration[] | undefined,
+        parameters: readonly ts.ParameterDeclaration[],
+        type: ts.TypeNode | undefined,
+        body: ts.Block | undefined,
+        original: lua.Node
+    ): ts.MethodDeclaration {
+        const tsNode = ts.createMethod(
+            decorators,
+            modifiers,
+            asteriskToken,
+            name,
+            questionToken,
+            typeParameters,
+            parameters,
+            type,
+            body
+        );
+        this.map.set(tsNode, original);
+        return tsNode;
+    }
 }

@@ -37,6 +37,16 @@ export function getParameterTParam(
     }
 }
 
+export function getTagsOfKind(kind: "param", node: lua.Node, chunk: lua.Chunk): tags.ParamTag[];
+export function getTagsOfKind(kind: "tparam", node: lua.Node, chunk: lua.Chunk): tags.TParamTag[];
+export function getTagsOfKind(kind: "return", node: lua.Node, chunk: lua.Chunk): tags.ReturnTag[];
+export function getTagsOfKind(kind: "treturn", node: lua.Node, chunk: lua.Chunk): tags.TReturnTag[];
+export function getTagsOfKind(kind: "type", node: lua.Node, chunk: lua.Chunk): tags.TypeTag[];
+export function getTagsOfKind(kind: "classmod", node: lua.Node, chunk: lua.Chunk): tags.ClassMod[];
+export function getTagsOfKind(kind: tags.Tag["kind"], node: lua.Node, chunk: lua.Chunk): tags.Tag[] {
+    return getTags(getComments(chunk, node)).filter(tag => tag.kind === kind);
+}
+
 export function getCommentsAsString(chunk: lua.Chunk, node: lua.Node): string {
     return getComments(chunk, node)
         .map(comment => comment.value)
@@ -85,6 +95,11 @@ export function getTags(comments: lua.Comment[]): tags.Tag[] {
             case "@type": {
                 const [type, ...description] = text;
                 availableTags.push(tags.createTypeTag(type, description.join(" ")));
+                break;
+            }
+            case "@classmod": {
+                const [name] = text;
+                availableTags.push(tags.createClassMod(name));
                 break;
             }
         }

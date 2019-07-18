@@ -1,8 +1,8 @@
-import { tsquery } from "@phenomnomnominal/tsquery";
 import * as ts from "typescript";
 import * as lua from "./ast";
 import * as helper from "./helper";
 import * as tags from "./tags";
+import * as classmod from "./classmod";
 import { TsBuilder } from "./TsBuilder";
 
 export class Transformer {
@@ -10,6 +10,7 @@ export class Transformer {
     private checker?: ts.TypeChecker;
     private diagnostics: string[];
     private builder: TsBuilder;
+    private blockScopeLevel = 0;
 
     constructor(program?: ts.Program) {
         if (program) {
@@ -29,11 +30,53 @@ export class Transformer {
 
     public transformChunk(ast: lua.Chunk): ts.Statement[] {
         this.chunk = ast;
+        this.blockScopeLevel = 0;
         return this.transformBlock(ast.body);
     }
 
-    private transformBlock(node: lua.Block): ts.Statement[] {
-        return node.map(statement => this.transformStatement(statement));
+    private transformBlock(statements: lua.Block): ts.Statement[] {
+        this.blockScopeLevel++;
+
+        const result: ts.Statement[] = [];
+        if (classmod.canBeTransformedToClass(statements, this.chunk)) {
+            const [classDeclaration, ...remainingStatements] = this.transformStatementsAsClass(statements);
+            statements = remainingStatements;
+            result.push(classDeclaration);
+        }
+
+        const remainingStatements = statements.map(statement => this.transformStatement(statement));
+        result.push(...remainingStatements);
+
+        return result;
+    }
+
+    private transformStatementsAsClass(statements: lua.Statement[]): [ts.ClassDeclaration, ...lua.Statement[]] {
+        const [localStatement, ...statementsToCheck] = statements;
+        const memberExpressionFunctionDeclarations: lua.FunctionDeclaration[] = [];
+        const remainingStatements = statementsToCheck.filter(statement => {
+            if (statement.type === "FunctionDeclaration" && statement.identifier.type === "MemberExpression") {
+                memberExpressionFunctionDeclarations.push(statement);
+            } else {
+                return true;
+            }
+        });
+
+        const name =
+            localStatement && localStatement.type === "LocalStatement" ? localStatement.variables[0].name : undefined;
+        const methods = memberExpressionFunctionDeclarations
+            .map(statement => this.transformFunctionDeclarationAsMethod(statement as lua.FunctionDeclaration));
+
+        const classDeclaration = this.builder.createClassDeclaration(
+            undefined,
+            undefined,
+            name ? this.builder.createIdentifier(name, localStatement) : undefined,
+            undefined,
+            undefined,
+            methods,
+            localStatement
+        );
+
+        return [classDeclaration, ...remainingStatements];
     }
 
     private joinObjectAssignmentStatements(statements: ts.Statement[]): ts.Statement[] {
@@ -550,9 +593,7 @@ export class Transformer {
 
     private transformLocalStatement(node: lua.LocalStatement): ts.VariableStatement {
         const { left, right } = this.transformLocalBindingPattern(node.variables, node.init);
-        const tag = helper
-            .getTags(helper.getComments(this.chunk, node))
-            .find(associatedTag => associatedTag.kind === "type") as tags.TypeTag;
+        const [tag] = helper.getTagsOfKind("type", node, this.chunk);
         const type = tag ? this.transformType(tag.type) : undefined;
 
         return this.builder.createVariableStatement(
@@ -566,16 +607,20 @@ export class Transformer {
         );
     }
 
-    private transformReturnStatement(node: lua.ReturnStatement): ts.ReturnStatement {
+    private transformReturnStatement(node: lua.ReturnStatement): ts.ReturnStatement | ts.ExportAssignment {
         const returnArguments = node.arguments.map(argument => this.transformExpression(argument));
-        const returnNode =
+        const returnExpression =
             returnArguments.length > 0
                 ? returnArguments.length === 1
                     ? returnArguments[0]
                     : this.builder.createArrayLiteral(returnArguments, false, node)
                 : undefined;
 
-        return this.builder.createReturn(returnNode, node);
+        if (this.blockScopeLevel === 1 && returnExpression) {
+            return this.builder.createExportAssignment(undefined, undefined, true, returnExpression, node);
+        } else {
+            return this.builder.createReturn(returnExpression, node);
+        }
     }
 
     private transformFunctionDeclaration(
@@ -618,6 +663,28 @@ export class Transformer {
             default:
                 throw new Error(`Unknown function declaration ${node.identifier!.type}`);
         }
+    }
+
+    private transformFunctionDeclarationAsMethod(node: lua.FunctionDeclaration): ts.MethodDeclaration {
+        if (node.identifier.type === "Identifier") {
+            throw new Error("Expected a member expression");
+        }
+
+        const comments = helper.getComments(this.chunk, node);
+        const availableTags = helper.getTags(comments);
+
+        return this.builder.createMethod(
+            undefined,
+            undefined,
+            undefined,
+            this.builder.createIdentifier(node.identifier.identifier.name, node.identifier),
+            undefined,
+            undefined,
+            node.parameters.map(identifier => this.transformParameterDeclaration(identifier, availableTags)),
+            undefined,
+            ts.createBlock(this.transformBlock(node.body)),
+            node
+        );
     }
 
     private transformFunctionExpression(node: lua.FunctionExpression | lua.FunctionDeclaration): ts.FunctionExpression {
