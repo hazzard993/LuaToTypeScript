@@ -3,6 +3,7 @@ import * as lua from "./ast";
 import * as helper from "./helper";
 import * as tags from "./tags";
 import * as classmod from "./classmod";
+import * as moduleTag from "./module";
 import { TsBuilder } from "./TsBuilder";
 
 export class Transformer {
@@ -44,6 +45,12 @@ export class Transformer {
             result.push(classDeclaration);
         }
 
+        if (moduleTag.canBeTransformedToModule(statements, this.chunk)) {
+            const [exportedFunctions, remainingStatements] = this.transformExportedFunctionMembers(statements);
+            statements = remainingStatements;
+            result.push(...exportedFunctions);
+        }
+
         const remainingStatements = statements.map(statement => this.transformStatement(statement));
         result.push(...remainingStatements);
 
@@ -65,8 +72,9 @@ export class Transformer {
 
         const name =
             localStatement && localStatement.type === "LocalStatement" ? localStatement.variables[0].name : undefined;
-        const methods = memberExpressionFunctionDeclarations
-            .map(statement => this.transformFunctionDeclarationAsMethod(statement as lua.FunctionDeclaration));
+        const methods = memberExpressionFunctionDeclarations.map(statement =>
+            this.transformFunctionDeclarationAsMethod(statement as lua.FunctionDeclaration)
+        );
 
         const classDeclaration = this.builder.createClassDeclaration(
             undefined,
@@ -79,6 +87,23 @@ export class Transformer {
         );
 
         return [classDeclaration, ...remainingStatements];
+    }
+
+    private transformExportedFunctionMembers(statements: lua.Statement[]): [ts.FunctionDeclaration[], lua.Statement[]] {
+        const exportedFunctions: ts.FunctionDeclaration[] = [];
+        const remainingStatements = statements.slice(1).filter(statement => {
+            if (statement.type === "FunctionDeclaration" && statement.identifier.type === "MemberExpression") {
+                const functionDeclaration = this.transformFunctionDeclarationAsExportedFunction(
+                    statement as lua.FunctionDeclaration
+                );
+                exportedFunctions.push(functionDeclaration);
+                return false;
+            } else {
+                return true;
+            }
+        });
+
+        return [exportedFunctions, remainingStatements];
     }
 
     private joinObjectAssignmentStatements(statements: ts.Statement[]): ts.Statement[] {
@@ -626,7 +651,7 @@ export class Transformer {
     }
 
     private transformFunctionDeclaration(
-        node: lua.FunctionDeclaration
+        node: lua.FunctionDeclaration,
     ): ts.FunctionDeclaration | ts.ExpressionStatement {
         const comments = helper.getComments(this.chunk, node);
         const availableTags = helper.getTags(comments);
@@ -697,9 +722,49 @@ export class Transformer {
         );
     }
 
-    private transformFunctionExpression(node: lua.FunctionExpression | lua.FunctionDeclaration): ts.FunctionExpression {
-        return this.builder.createFunctionExpression(
+    private transformFunctionDeclarationAsExportedFunction(node: lua.FunctionDeclaration): ts.FunctionDeclaration {
+        const comments = helper.getComments(this.chunk, node);
+        const availableTags = helper.getTags(comments);
+        const treturns = availableTags.filter(currentTag => currentTag.kind === "treturn") as tags.TReturnTag[];
+        const treturnTypes = treturns.map(treturn => this.transformType(treturn.type));
+        const type =
+            treturnTypes.length > 0
+                ? treturnTypes.length > 1
+                    ? this.builder.createTupleTypeNode(treturnTypes)
+                    : treturnTypes[0]
+                : this.builder.createKeywordTypeNode(ts.SyntaxKind.VoidKeyword);
+
+        const modifiers = [ts.createModifier(ts.SyntaxKind.ExportKeyword)];
+
+        if (node.identifier.type === "Identifier") {
+            throw new Error("Cannot export a non-MemberExpression function");
+        }
+
+        if (node.identifier.base.type === "MemberExpression") {
+            throw new Error("Cannot export nested member expression functions");
+        }
+
+        const name = this.transformIdentifier(node.identifier.identifier);
+
+        return this.builder.createFunctionDeclaration(
             undefined,
+            modifiers,
+            undefined,
+            name,
+            undefined,
+            node.parameters.map(identifier => this.transformParameterDeclaration(identifier, availableTags)),
+            type,
+            this.builder.createBlock(this.transformBlock(node.body), true, node),
+            node
+        );
+    }
+
+    private transformFunctionExpression(
+        node: lua.FunctionExpression | lua.FunctionDeclaration,
+        modifiers?: ReadonlyArray<ts.Modifier>
+    ): ts.FunctionExpression {
+        return this.builder.createFunctionExpression(
+            modifiers,
             undefined,
             undefined,
             undefined,
