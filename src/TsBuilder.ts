@@ -433,4 +433,16 @@ export class TsBuilder {
         this.map.set(tsNode, original);
         return tsNode;
     }
+
+    public createWhile(expression: ts.Expression, block: ts.Block, original: lua.Node): ts.WhileStatement {
+        const tsNode = ts.createWhile(expression, block);
+        this.map.set(tsNode, original);
+        return tsNode;
+    }
+
+    public createBreak(original: lua.Node): ts.BreakStatement {
+        const tsNode = ts.createBreak();
+        this.map.set(tsNode, original);
+        return tsNode;
+    }
 }

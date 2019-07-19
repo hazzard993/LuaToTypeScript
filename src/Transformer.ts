@@ -157,6 +157,10 @@ export class Transformer {
                 return this.transformForGenericStatement(node);
             case "ForNumericStatement":
                 return this.transformForNumericStatement(node);
+            case "WhileStatement":
+                return this.transformWhileStatement(node);
+            case "BreakStatement":
+                return this.transformBreakStatement(node);
             default:
                 throw new Error(`Unknown Statement Type: ${node!.type}`);
         }
@@ -448,6 +452,18 @@ export class Transformer {
             this.builder.createBlock(this.transformBlock(node.body), true),
             node
         );
+    }
+
+    private transformWhileStatement(node: lua.WhileStatement): ts.WhileStatement {
+        return this.builder.createWhile(
+            this.transformExpression(node.condition),
+            this.builder.createBlock(this.transformBlock(node.body), true, node),
+            node
+        );
+    }
+
+    private transformBreakStatement(node: lua.BreakStatement): ts.BreakStatement {
+        return this.builder.createBreak(node);
     }
 
     private transformTableKeyString(node: lua.TableKeyString): ts.ObjectLiteralElementLike {

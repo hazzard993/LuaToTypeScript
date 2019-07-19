@@ -9,7 +9,8 @@ export type NodeTypes =
     | "NumericLiteral"
     | "BooleanLiteral"
     | "StringCallExpression"
-    | "TableCallExpression";
+    | "TableCallExpression"
+    | "WhileStatement";
 
 export type Block = Statement[];
 
@@ -37,7 +38,9 @@ export type Statement =
     | CallStatement
     | IfStatement
     | ForGenericStatement
-    | ForNumericStatement;
+    | ForNumericStatement
+    | WhileStatement
+    | BreakStatement;
 
 export interface Identifier extends Node {
     type: "Identifier";
@@ -76,6 +79,16 @@ export interface ForNumericStatement extends Node {
     end: Expression;
     step: Expression | null;
     body: Statement[];
+}
+
+export interface WhileStatement extends Node {
+    type: "WhileStatement";
+    condition: Expression;
+    body: Statement[];
+}
+
+export interface BreakStatement extends Node {
+    type: "BreakStatement";
 }
 
 export interface IfClause extends Node {
