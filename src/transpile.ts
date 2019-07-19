@@ -16,7 +16,13 @@ export interface TranspileResult {
     transpiledFiles: TranspiledFile[];
 }
 
-export function transpile(files: string[], showSemanticErrors: boolean): TranspileResult {
+export interface Options {
+    showSemanticErrors?: boolean;
+    module?: boolean;
+    classmod?: boolean;
+}
+
+export function transpile(files: string[], options: Options): TranspileResult {
     const allDiagnostics: string[] = [];
     const transpiledFiles = files
         .filter(ts.sys.fileExists)
@@ -27,8 +33,8 @@ export function transpile(files: string[], showSemanticErrors: boolean): Transpi
             };
         })
         .map(({ contents, fileName }) => {
-            const { ast, statements, tsCode, diagnostics } = transformLuaToTypeScript(contents.toString());
-            if (showSemanticErrors) {
+            const { ast, statements, tsCode, diagnostics } = transformLuaToTypeScript(contents.toString(), options);
+            if (options.showSemanticErrors) {
                 const semanticErrors = getSemanticDiagnosticsTypeScriptCode(tsCode);
                 diagnostics.push(...semanticErrors.map(error => error.messageText.toString()));
             }
@@ -63,8 +69,9 @@ export function transformLuaCodeToTypeScriptStatements(
 
 export function transformLuaToTypeScript(
     luaCode: string,
-    transformer = new Transformer(),
-    sourceFile = ts.createSourceFile("dummy.ts", "", ts.ScriptTarget.ESNext)
+    options: Options = {},
+    sourceFile = ts.createSourceFile("dummy.ts", "", ts.ScriptTarget.ESNext),
+    transformer = new Transformer(undefined, options)
 ): {
     ast: WeakMap<ts.Node, lua.Node | undefined>;
     diagnostics: string[];

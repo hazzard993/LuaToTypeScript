@@ -7,7 +7,9 @@ export type NodeTypes =
     | "AssignmentStatement"
     | "LocalStatement"
     | "NumericLiteral"
-    | "BooleanLiteral";
+    | "BooleanLiteral"
+    | "StringCallExpression"
+    | "TableCallExpression";
 
 export type Block = Statement[];
 
@@ -132,6 +134,18 @@ export interface CallExpression extends Node {
     arguments: Expression[];
 }
 
+export interface StringCallExpression extends Node {
+    type: "StringCallExpression";
+    base: Identifier | MemberExpression;
+    argument: StringLiteral;
+}
+
+export interface TableCallExpression extends Node {
+    type: "TableCallExpression";
+    base: Identifier | MemberExpression;
+    argument: TableConstructorExpression;
+}
+
 export interface TableConstructorExpression extends Node {
     type: "TableConstructorExpression";
     fields: Array<TableValue | TableKeyString>;
@@ -211,6 +225,8 @@ export type Expression =
     | BinaryExpression
     | MemberExpression
     | CallExpression
+    | StringCallExpression
+    | TableCallExpression
     | BooleanLiteral
     | VarargLiteral
     | NilLiteral

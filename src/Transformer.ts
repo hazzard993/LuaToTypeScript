@@ -5,6 +5,7 @@ import * as tags from "./tags";
 import * as classmod from "./classmod";
 import * as moduleTag from "./module";
 import { TsBuilder } from "./TsBuilder";
+import { Options } from "./transpile";
 
 export class Transformer {
     private chunk!: lua.Chunk;
@@ -13,7 +14,7 @@ export class Transformer {
     private builder: TsBuilder;
     private blockScopeLevel = 0;
 
-    constructor(program?: ts.Program) {
+    constructor(program: ts.Program | undefined, private options: Options) {
         if (program) {
             this.checker = program.getTypeChecker();
         }
@@ -36,7 +37,7 @@ export class Transformer {
         let statements = ast.body;
         const result: ts.Statement[] = [];
 
-        if (moduleTag.canBeTransformedToModule(statements, this.chunk)) {
+        if (this.options.module && moduleTag.canBeTransformedToModule(statements, this.chunk)) {
             const [exportedFunctions, remainingStatements] = this.transformExportedFunctionMembers(statements);
             statements = remainingStatements;
             result.push(...exportedFunctions);
@@ -51,7 +52,7 @@ export class Transformer {
         this.blockScopeLevel++;
 
         const result: ts.Statement[] = [];
-        if (classmod.canBeTransformedToClass(statements, this.chunk)) {
+        if (this.options.classmod && classmod.canBeTransformedToClass(statements, this.chunk)) {
             const [classDeclaration, ...remainingStatements] = this.transformStatementsAsClass(statements);
             statements = remainingStatements;
             result.push(classDeclaration);
@@ -183,6 +184,10 @@ export class Transformer {
                 return this.transformMemberExpression(node);
             case "CallExpression":
                 return this.transformCallExpression(node);
+            case "StringCallExpression":
+                return this.transformStringCallExpression(node);
+            case "TableCallExpression":
+                return this.transformTableCallExpression(node);
             case "BooleanLiteral":
                 return this.transformBooleanLiteral(node);
             case "VarargLiteral":
@@ -192,7 +197,7 @@ export class Transformer {
             case "IndexExpression":
                 return this.transformIndexExpression(node);
             default:
-                throw new Error(`Unknown Expression Type: ${node!.type}`);
+                throw new Error(`Unknown Expression Type: ${node!.type} ${node!.range}`);
         }
     }
 
@@ -589,6 +594,24 @@ export class Transformer {
             this.transformExpression(node.base),
             undefined,
             node.arguments.map(expression => this.transformExpression(expression)),
+            node
+        );
+    }
+
+    private transformStringCallExpression(node: lua.StringCallExpression): ts.CallExpression {
+        return this.builder.createCall(
+            this.transformExpression(node.base),
+            undefined,
+            [this.transformExpression(node.argument)],
+            node
+        );
+    }
+
+    private transformTableCallExpression(node: lua.TableCallExpression): ts.CallExpression {
+        return this.builder.createCall(
+            this.transformExpression(node.base),
+            undefined,
+            [this.transformExpression(node.argument)],
             node
         );
     }
