@@ -331,7 +331,17 @@ export class Transformer {
     }
 
     private transformIdentifier(node: lua.Identifier): ts.Identifier {
-        return this.builder.createIdentifier(node.name, node);
+        let chosenName: string;
+        switch (node.name) {
+            case "_G": {
+                chosenName = "globalThis";
+                break;
+            }
+            default: {
+                chosenName = node.name;
+            }
+        }
+        return this.builder.createIdentifier(chosenName, node);
     }
 
     private transformIfStatement(node: lua.IfStatement): ts.IfStatement {
