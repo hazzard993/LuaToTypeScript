@@ -723,6 +723,15 @@ export class Transformer {
                     node
                 );
             case "MemberExpression": {
+                if (node.identifier.indexer === ":") {
+                    node.parameters.unshift({
+                        type: "Identifier",
+                        name: "self",
+                        range: node.range,
+                        raw: "self"
+                    });
+                }
+
                 return this.builder.createExpressionStatement(
                     this.builder.createAssignment(
                         this.transformExpression(node.identifier),
