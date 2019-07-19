@@ -32,7 +32,19 @@ export class Transformer {
     public transformChunk(ast: lua.Chunk): ts.Statement[] {
         this.chunk = ast;
         this.blockScopeLevel = 0;
-        return this.transformBlock(ast.body);
+
+        let statements = ast.body;
+        const result: ts.Statement[] = [];
+
+        if (moduleTag.canBeTransformedToModule(statements, this.chunk)) {
+            const [exportedFunctions, remainingStatements] = this.transformExportedFunctionMembers(statements);
+            statements = remainingStatements;
+            result.push(...exportedFunctions);
+        }
+
+        result.push(...this.transformBlock(statements));
+
+        return result;
     }
 
     private transformBlock(statements: lua.Block): ts.Statement[] {
@@ -43,12 +55,6 @@ export class Transformer {
             const [classDeclaration, ...remainingStatements] = this.transformStatementsAsClass(statements);
             statements = remainingStatements;
             result.push(classDeclaration);
-        }
-
-        if (moduleTag.canBeTransformedToModule(statements, this.chunk)) {
-            const [exportedFunctions, remainingStatements] = this.transformExportedFunctionMembers(statements);
-            statements = remainingStatements;
-            result.push(...exportedFunctions);
         }
 
         const remainingStatements = statements.map(statement => this.transformStatement(statement));
@@ -651,7 +657,7 @@ export class Transformer {
     }
 
     private transformFunctionDeclaration(
-        node: lua.FunctionDeclaration,
+        node: lua.FunctionDeclaration
     ): ts.FunctionDeclaration | ts.ExpressionStatement {
         const comments = helper.getComments(this.chunk, node);
         const availableTags = helper.getTags(comments);
