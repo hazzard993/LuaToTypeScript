@@ -3,7 +3,9 @@ import * as lua from "./ast";
 import * as helper from "./helper";
 import * as tags from "./tags";
 import * as classmod from "./classmod";
+import * as moduleTag from "./module";
 import { TsBuilder } from "./TsBuilder";
+import { Options } from "./transpile";
 
 export class Transformer {
     private chunk!: lua.Chunk;
@@ -12,7 +14,7 @@ export class Transformer {
     private builder: TsBuilder;
     private blockScopeLevel = 0;
 
-    constructor(program?: ts.Program) {
+    constructor(program: ts.Program | undefined, private options: Options) {
         if (program) {
             this.checker = program.getTypeChecker();
         }
@@ -31,14 +33,26 @@ export class Transformer {
     public transformChunk(ast: lua.Chunk): ts.Statement[] {
         this.chunk = ast;
         this.blockScopeLevel = 0;
-        return this.transformBlock(ast.body);
+
+        let statements = ast.body;
+        const result: ts.Statement[] = [];
+
+        if (this.options.module && moduleTag.canBeTransformedToModule(statements, this.chunk)) {
+            const [exportedFunctions, remainingStatements] = this.transformExportedFunctionMembers(statements);
+            statements = remainingStatements;
+            result.push(...exportedFunctions);
+        }
+
+        result.push(...this.transformBlock(statements));
+
+        return result;
     }
 
     private transformBlock(statements: lua.Block): ts.Statement[] {
         this.blockScopeLevel++;
 
         const result: ts.Statement[] = [];
-        if (classmod.canBeTransformedToClass(statements, this.chunk)) {
+        if (this.options.classmod && classmod.canBeTransformedToClass(statements, this.chunk)) {
             const [classDeclaration, ...remainingStatements] = this.transformStatementsAsClass(statements);
             statements = remainingStatements;
             result.push(classDeclaration);
@@ -65,8 +79,9 @@ export class Transformer {
 
         const name =
             localStatement && localStatement.type === "LocalStatement" ? localStatement.variables[0].name : undefined;
-        const methods = memberExpressionFunctionDeclarations
-            .map(statement => this.transformFunctionDeclarationAsMethod(statement as lua.FunctionDeclaration));
+        const methods = memberExpressionFunctionDeclarations.map(statement =>
+            this.transformFunctionDeclarationAsMethod(statement as lua.FunctionDeclaration)
+        );
 
         const classDeclaration = this.builder.createClassDeclaration(
             undefined,
@@ -79,6 +94,23 @@ export class Transformer {
         );
 
         return [classDeclaration, ...remainingStatements];
+    }
+
+    private transformExportedFunctionMembers(statements: lua.Statement[]): [ts.FunctionDeclaration[], lua.Statement[]] {
+        const exportedFunctions: ts.FunctionDeclaration[] = [];
+        const remainingStatements = statements.slice(1).filter(statement => {
+            if (statement.type === "FunctionDeclaration" && statement.identifier.type === "MemberExpression") {
+                const functionDeclaration = this.transformFunctionDeclarationAsExportedFunction(
+                    statement as lua.FunctionDeclaration
+                );
+                exportedFunctions.push(functionDeclaration);
+                return false;
+            } else {
+                return true;
+            }
+        });
+
+        return [exportedFunctions, remainingStatements];
     }
 
     private joinObjectAssignmentStatements(statements: ts.Statement[]): ts.Statement[] {
@@ -125,6 +157,10 @@ export class Transformer {
                 return this.transformForGenericStatement(node);
             case "ForNumericStatement":
                 return this.transformForNumericStatement(node);
+            case "WhileStatement":
+                return this.transformWhileStatement(node);
+            case "BreakStatement":
+                return this.transformBreakStatement(node);
             default:
                 throw new Error(`Unknown Statement Type: ${node!.type}`);
         }
@@ -152,6 +188,10 @@ export class Transformer {
                 return this.transformMemberExpression(node);
             case "CallExpression":
                 return this.transformCallExpression(node);
+            case "StringCallExpression":
+                return this.transformStringCallExpression(node);
+            case "TableCallExpression":
+                return this.transformTableCallExpression(node);
             case "BooleanLiteral":
                 return this.transformBooleanLiteral(node);
             case "VarargLiteral":
@@ -161,7 +201,7 @@ export class Transformer {
             case "IndexExpression":
                 return this.transformIndexExpression(node);
             default:
-                throw new Error(`Unknown Expression Type: ${node!.type}`);
+                throw new Error(`Unknown Expression Type: ${node!.type} ${node!.range}`);
         }
     }
 
@@ -414,6 +454,18 @@ export class Transformer {
         );
     }
 
+    private transformWhileStatement(node: lua.WhileStatement): ts.WhileStatement {
+        return this.builder.createWhile(
+            this.transformExpression(node.condition),
+            this.builder.createBlock(this.transformBlock(node.body), true, node),
+            node
+        );
+    }
+
+    private transformBreakStatement(node: lua.BreakStatement): ts.BreakStatement {
+        return this.builder.createBreak(node);
+    }
+
     private transformTableKeyString(node: lua.TableKeyString): ts.ObjectLiteralElementLike {
         const name =
             node.key.type === "Identifier"
@@ -562,6 +614,24 @@ export class Transformer {
         );
     }
 
+    private transformStringCallExpression(node: lua.StringCallExpression): ts.CallExpression {
+        return this.builder.createCall(
+            this.transformExpression(node.base),
+            undefined,
+            [this.transformExpression(node.argument)],
+            node
+        );
+    }
+
+    private transformTableCallExpression(node: lua.TableCallExpression): ts.CallExpression {
+        return this.builder.createCall(
+            this.transformExpression(node.base),
+            undefined,
+            [this.transformExpression(node.argument)],
+            node
+        );
+    }
+
     private transformLocalBindingPattern(
         variables: lua.Identifier[],
         expressions: lua.Expression[]
@@ -697,9 +767,49 @@ export class Transformer {
         );
     }
 
-    private transformFunctionExpression(node: lua.FunctionExpression | lua.FunctionDeclaration): ts.FunctionExpression {
-        return this.builder.createFunctionExpression(
+    private transformFunctionDeclarationAsExportedFunction(node: lua.FunctionDeclaration): ts.FunctionDeclaration {
+        const comments = helper.getComments(this.chunk, node);
+        const availableTags = helper.getTags(comments);
+        const treturns = availableTags.filter(currentTag => currentTag.kind === "treturn") as tags.TReturnTag[];
+        const treturnTypes = treturns.map(treturn => this.transformType(treturn.type));
+        const type =
+            treturnTypes.length > 0
+                ? treturnTypes.length > 1
+                    ? this.builder.createTupleTypeNode(treturnTypes)
+                    : treturnTypes[0]
+                : this.builder.createKeywordTypeNode(ts.SyntaxKind.VoidKeyword);
+
+        const modifiers = [ts.createModifier(ts.SyntaxKind.ExportKeyword)];
+
+        if (node.identifier.type === "Identifier") {
+            throw new Error("Cannot export a non-MemberExpression function");
+        }
+
+        if (node.identifier.base.type === "MemberExpression") {
+            throw new Error("Cannot export nested member expression functions");
+        }
+
+        const name = this.transformIdentifier(node.identifier.identifier);
+
+        return this.builder.createFunctionDeclaration(
             undefined,
+            modifiers,
+            undefined,
+            name,
+            undefined,
+            node.parameters.map(identifier => this.transformParameterDeclaration(identifier, availableTags)),
+            type,
+            this.builder.createBlock(this.transformBlock(node.body), true, node),
+            node
+        );
+    }
+
+    private transformFunctionExpression(
+        node: lua.FunctionExpression | lua.FunctionDeclaration,
+        modifiers?: ReadonlyArray<ts.Modifier>
+    ): ts.FunctionExpression {
+        return this.builder.createFunctionExpression(
+            modifiers,
             undefined,
             undefined,
             undefined,

@@ -1,4 +1,4 @@
-export type Tag = ParamTag | TParamTag | ReturnTag | TReturnTag | TypeTag | ClassMod;
+export type Tag = ParamTag | TParamTag | ReturnTag | TReturnTag | TypeTag | ClassMod | ModuleTag;
 
 export interface ParamTag {
     kind: "param";
@@ -78,6 +78,18 @@ export interface ClassMod {
 export function createClassMod(name: string): ClassMod {
     return {
         kind: "classmod",
+        name,
+    };
+}
+
+export interface ModuleTag {
+    kind: "module";
+    name: string;
+}
+
+export function createModuleTag(name: string): ModuleTag {
+    return {
+        kind: "module",
         name,
     };
 }
