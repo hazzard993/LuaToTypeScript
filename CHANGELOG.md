@@ -1,3 +1,26 @@
+## Version 0.0.5
+
+- While statements are transformed properly
+- Break statements too
+- Using `--module` will check out the `@module` LDoc tag
+- Using `--classmod` will use the `@classmod` LDoc tag
+
+The tag `@module` will perform the following transformation:
+
+```lua
+--- Description
+-- @module
+local module = {}
+
+function module:test() end
+
+return module
+```
+
+```ts
+export function test() {}
+```
+
 ## Version 0.0.4
 
 Top level return statements transform into `export = ...`.
