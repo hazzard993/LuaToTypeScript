@@ -1,3 +1,8 @@
+## Version 0.0.6
+
+- `_G` transforms to `globalThis`
+- Bugfix for `and` not being transformed properly (#3)
+
 ## Version 0.0.5
 
 - While statements are transformed properly
