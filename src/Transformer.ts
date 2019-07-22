@@ -284,7 +284,7 @@ export class Transformer {
     private transformLogicalExpression(node: lua.LogicalExpression): ts.BinaryExpression {
         const operator =
             node.operator === "and"
-                ? ts.SyntaxKind.AsteriskAsteriskToken
+                ? ts.SyntaxKind.AmpersandAmpersandToken
                 : node.operator === "or"
                 ? ts.SyntaxKind.BarBarToken
                 : undefined;
