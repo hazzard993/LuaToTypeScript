@@ -2,6 +2,7 @@ import * as luaparse from "luaparse";
 import * as lua from "./ast";
 import * as cli from "./cli";
 import { Transformer } from "./Transformer";
+import * as ts from "typescript";
 
 describe("Check for transformer errors", () => {
     const transformer = new Transformer();
@@ -42,7 +43,30 @@ describe("Check for transformer errors", () => {
             expect(() => transformer.transformChunk(ast)).not.toThrowError();
         });
     });
+    describe("And operation should be &&", () => {
+        const ast = luaparse.parse(`local a = true and false`, { ranges: true }) as lua.Chunk;
+        const result = ts.createBlock(transformer.transformChunk(ast));
+        expect(printAst(result)).toBe(`\
+{
+    let a = true && false;
+}`);
+    });
 });
+
+function printAst(node: ts.Node): string {
+    const printer = ts.createPrinter({
+        newLine: ts.NewLineKind.LineFeed,
+    });
+    const resultFile = ts.createSourceFile(
+        "result.ts",
+        "",
+        ts.ScriptTarget.Latest,
+        /*setParentNodes*/ false,
+        ts.ScriptKind.TS
+    );
+    const out = printer.printNode(ts.EmitHint.Unspecified, node, resultFile);
+    return out;
+}
 
 describe("Detect diagnostic errors", () => {
     describe("LocalStatement type guards", () => {
