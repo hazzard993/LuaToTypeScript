@@ -113,32 +113,6 @@ export class Transformer {
         return [exportedFunctions, remainingStatements];
     }
 
-    private joinObjectAssignmentStatements(statements: ts.Statement[]): ts.Statement[] {
-        const block = this.builder.createBlock(statements);
-        // tsquery(block, "ExpressionStatement > BinaryExpression > PropertyAccessExpression > Identifier[name=x]")
-        // tsquery(this.builder.createBlock(statements),)
-        const variableDeclarations = statements.filter(
-            statement =>
-                ts.isVariableStatement(statement) &&
-                ts.isVariableDeclaration(statement.declarationList.declarations[0]) &&
-                ts.isIdentifier(statement.declarationList.declarations[0].name)
-        ) as ts.VariableStatement[] & { declarationList: { declarations: [{ name: ts.Identifier }] } };
-        const objectLiteralDeclarations = variableDeclarations.filter(
-            variableDeclaration =>
-                variableDeclaration.declarationList.declarations[0].initializer &&
-                ts.isObjectLiteralExpression(variableDeclaration.declarationList.declarations[0].initializer)
-        ) as Array<
-            ts.VariableStatement & {
-                declarationList: { declarations: [{ name: ts.Identifier; initializer: ts.Expression }] };
-            }
-        >;
-        const objectLiteralNodes = objectLiteralDeclarations.map(objectLiteralDeclaration => ({
-            identifier: objectLiteralDeclaration.declarationList.declarations[0].name,
-            objectLiteralExpression: objectLiteralDeclaration.declarationList.declarations[0].initializer,
-        })) as Array<{ identifier: ts.Identifier; objectLiteralExpression: ts.ObjectLiteralExpression }>;
-        return objectLiteralDeclarations;
-    }
-
     private transformStatement(node: lua.Statement): ts.Statement {
         switch (node.type) {
             case "LocalStatement":
