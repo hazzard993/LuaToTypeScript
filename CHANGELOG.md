@@ -1,3 +1,8 @@
+## Version 0.1.0
+
+- Added `--declaration`. This generates _.d.ts_ files instead of _.ts_ files.
+    - Typings are extracted using _lua-types_
+
 ## Version 0.0.6
 
 - `_G` transforms to `globalThis`
