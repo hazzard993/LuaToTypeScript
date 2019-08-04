@@ -1,13 +1,14 @@
 import * as program from "commander";
 import { emit } from "./emit";
 import { transpile } from "./transpile";
+import { generateDeclarations } from "./declaration";
 
 program
-    .version("0.0.1")
     .usage("[options] <luaFiles...>")
     .option("-s, --show-semantic-errors", "Show semantic issues with Lua code via transpilation")
     .option("-m, --module", "Use the @module tag to transform a module")
-    .option("-c, --classmod", "Use the @classmod tag to transform a class");
+    .option("-c, --classmod", "Use the @classmod tag to transform a class")
+    .option("-d, --declaration", "Generate declaration files only");
 
 export function parseCommandLine(args: string[]): void {
     program.parse(process.argv);
@@ -21,6 +22,12 @@ export function parseCommandLine(args: string[]): void {
             module,
             classmod,
         });
-        emit(transpileResult);
+
+        if (program.declaration) {
+            const declarationFiles = generateDeclarations(transpileResult);
+            emit(declarationFiles);
+        } else {
+            emit(transpileResult);
+        }
     }
 }

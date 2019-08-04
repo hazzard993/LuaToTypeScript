@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "commander": "^2.20.0",
+    "lua-types": "^2.5.2",
     "luaparse": "^0.2.1",
     "typescript": "^3.3.3333"
   },
