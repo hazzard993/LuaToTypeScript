@@ -11,6 +11,7 @@
         "ltts": "dist/index.js"
     },
     "files": [
+        "dist/**/*.js",
         "dist/*.js"
     ],
     "main": "dist/index",
