@@ -84,7 +84,6 @@ export function generateDeclarations(result: TranspileResult): TranspileResult {
                 fileName: outputFileName,
                 tsCode: outputFiles[outputFileName]
             };
-        }),
-        diagnostics: []
+        })
     };
 }

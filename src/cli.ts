@@ -23,6 +23,12 @@ export function parseCommandLine(args: string[]): void {
             classmod,
         });
 
+        if (showSemanticErrors) {
+            transpileResult.transpiledFiles.forEach(transpiledFile => {
+                transpiledFile.diagnostics.forEach(diagnostic => console.log(diagnostic));
+            });
+        }
+
         if (program.declaration) {
             const declarationFiles = generateDeclarations(transpileResult);
             emit(declarationFiles);

@@ -12,7 +12,6 @@ export interface TranspiledFile {
 }
 
 export interface TranspileResult {
-    diagnostics: string[];
     transpiledFiles: TranspiledFile[];
 }
 
@@ -23,7 +22,6 @@ export interface Options {
 }
 
 export function transpile(files: string[], options: Options): TranspileResult {
-    const allDiagnostics: string[] = [];
     const transpiledFiles = files
         .filter(ts.sys.fileExists)
         .map(fileName => {
@@ -45,7 +43,6 @@ export function transpile(files: string[], options: Options): TranspileResult {
             };
         });
     return {
-        diagnostics: allDiagnostics,
         transpiledFiles,
     };
 }
