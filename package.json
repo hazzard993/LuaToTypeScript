@@ -1,45 +1,44 @@
 {
-  "name": "lua-to-typescript",
-  "version": "0.1.1",
-  "description": "Transforms Lua to TypeScript code.",
-  "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "fix:prettier": "prettier --check --write \"**/*.{js,ts,yml,json,md}\"",
-    "test": "jest"
-  },
-  "bin": {
-    "ltts": "dist/index.js"
-  },
-  "files": [
-    "dist/*.js"
-  ],
-  "main": "dist/index",
-  "keywords": [
-    "lua",
-    "typescript",
-    "transpiler"
-  ],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "@types/jest": "^24.0.15",
-    "@types/luaparse": "0.0.29",
-    "@types/node": "^12.0.12",
-    "jest": "^24.5.0",
-    "ts-jest": "^24.0.0"
-  },
-  "dependencies": {
-    "commander": "^2.20.0",
-    "lua-types": "^2.5.2",
-    "luaparse": "^0.2.1",
-    "typescript": "^3.3.3333"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/hazzard993/LuaToTypeScript.git"
-  },
-  "bugs": {
-    "url": "https://github.com/hazzard993/LuaToTypeScript/issues"
-  },
-  "homepage": "https://github.com/hazzard993/LuaToTypeScript#readme"
+    "name": "lua-to-typescript",
+    "version": "0.1.1",
+    "description": "Transforms Lua to TypeScript code.",
+    "scripts": {
+        "build": "tsc -p tsconfig.json",
+        "fix:prettier": "prettier --check --write \"**/*.{js,ts,yml,json,md}\"",
+        "test": "jest"
+    },
+    "bin": {
+        "ltts": "dist/index.js"
+    },
+    "files": [
+        "dist/*.js"
+    ],
+    "main": "dist/index",
+    "keywords": [
+        "lua",
+        "typescript",
+        "transpiler"
+    ],
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "@types/jest": "^24.0.15",
+        "@types/node": "^12.0.12",
+        "jest": "^24.5.0",
+        "ts-jest": "^24.0.0"
+    },
+    "dependencies": {
+        "commander": "^2.20.0",
+        "fast-glob": "^3.0.4",
+        "luaparse": "^0.2.1",
+        "typescript": "^3.3.3333"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/hazzard993/LuaToTypeScript.git"
+    },
+    "bugs": {
+        "url": "https://github.com/hazzard993/LuaToTypeScript/issues"
+    },
+    "homepage": "https://github.com/hazzard993/LuaToTypeScript#readme"
 }

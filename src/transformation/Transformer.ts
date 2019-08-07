@@ -1,14 +1,14 @@
 import * as ts from "typescript";
-import * as lua from "./ast";
+import * as luaparse from "luaparse";
 import * as helper from "./helper";
-import * as tags from "./tags";
+import * as ldoc from "../ast/ldoc";
 import * as classmod from "./classmod";
 import * as moduleTag from "./module";
 import { TsBuilder } from "./TsBuilder";
-import { Options } from "./transpile";
+import { Options } from "../transpile";
 
 export class Transformer {
-    private chunk!: lua.Chunk;
+    private chunk!: luaparse.Chunk;
     private checker?: ts.TypeChecker;
     private diagnostics: string[];
     private builder: TsBuilder;
@@ -30,7 +30,7 @@ export class Transformer {
         return this.builder;
     }
 
-    public transformChunk(ast: lua.Chunk): ts.Statement[] {
+    public transformChunk(ast: luaparse.Chunk): ts.Statement[] {
         this.chunk = ast;
         this.blockScopeLevel = 0;
 
@@ -48,7 +48,7 @@ export class Transformer {
         return result;
     }
 
-    private transformBlock(statements: lua.Block): ts.Statement[] {
+    private transformBlock(statements: luaparse.Block): ts.Statement[] {
         this.blockScopeLevel++;
 
         const result: ts.Statement[] = [];
@@ -66,9 +66,11 @@ export class Transformer {
         return result;
     }
 
-    private transformStatementsAsClass(statements: lua.Statement[]): [ts.ClassDeclaration, ...lua.Statement[]] {
+    private transformStatementsAsClass(
+        statements: luaparse.Statement[]
+    ): [ts.ClassDeclaration, ...luaparse.Statement[]] {
         const [localStatement, ...statementsToCheck] = statements;
-        const memberExpressionFunctionDeclarations: lua.FunctionDeclaration[] = [];
+        const memberExpressionFunctionDeclarations: luaparse.FunctionDeclaration[] = [];
         const remainingStatements = statementsToCheck.filter(statement => {
             if (statement.type === "FunctionDeclaration" && statement.identifier.type === "MemberExpression") {
                 memberExpressionFunctionDeclarations.push(statement);
@@ -80,7 +82,7 @@ export class Transformer {
         const name =
             localStatement && localStatement.type === "LocalStatement" ? localStatement.variables[0].name : undefined;
         const methods = memberExpressionFunctionDeclarations.map(statement =>
-            this.transformFunctionDeclarationAsMethod(statement as lua.FunctionDeclaration)
+            this.transformFunctionDeclarationAsMethod(statement as luaparse.FunctionDeclaration)
         );
 
         const classDeclaration = this.builder.createClassDeclaration(
@@ -96,12 +98,14 @@ export class Transformer {
         return [classDeclaration, ...remainingStatements];
     }
 
-    private transformExportedFunctionMembers(statements: lua.Statement[]): [ts.FunctionDeclaration[], lua.Statement[]] {
+    private transformExportedFunctionMembers(
+        statements: luaparse.Statement[]
+    ): [ts.FunctionDeclaration[], luaparse.Statement[]] {
         const exportedFunctions: ts.FunctionDeclaration[] = [];
         const remainingStatements = statements.slice(1).filter(statement => {
             if (statement.type === "FunctionDeclaration" && statement.identifier.type === "MemberExpression") {
                 const functionDeclaration = this.transformFunctionDeclarationAsExportedFunction(
-                    statement as lua.FunctionDeclaration
+                    statement as luaparse.FunctionDeclaration
                 );
                 exportedFunctions.push(functionDeclaration);
                 return false;
@@ -113,7 +117,7 @@ export class Transformer {
         return [exportedFunctions, remainingStatements];
     }
 
-    private transformStatement(node: lua.Statement): ts.Statement {
+    private transformStatement(node: luaparse.Statement): ts.Statement {
         switch (node.type) {
             case "LocalStatement":
                 return this.transformLocalStatement(node);
@@ -140,7 +144,7 @@ export class Transformer {
         }
     }
 
-    private transformExpression(node: lua.Expression): ts.Expression {
+    private transformExpression(node: luaparse.Expression): ts.Expression {
         switch (node.type) {
             case "NumericLiteral":
                 return this.transformNumericLiteral(node);
@@ -179,22 +183,22 @@ export class Transformer {
         }
     }
 
-    private transformNilLiteral(node: lua.NilLiteral): ts.Identifier {
+    private transformNilLiteral(node: luaparse.NilLiteral): ts.Identifier {
         return this.builder.createIdentifier("undefined");
     }
 
-    private transformIndexExpression(node: lua.IndexExpression): ts.ElementAccessExpression {
+    private transformIndexExpression(node: luaparse.IndexExpression): ts.ElementAccessExpression {
         return this.builder.createElementAccess(
             this.transformExpression(node.base),
             this.transformExpression(node.index)
         );
     }
 
-    private transformVarargLiteral(node: lua.VarargLiteral): ts.Expression {
+    private transformVarargLiteral(node: luaparse.VarargLiteral): ts.Expression {
         return this.builder.createSpread(this.builder.createIdentifier("vararg"));
     }
 
-    private transformBooleanLiteral(node: lua.BooleanLiteral): ts.Expression {
+    private transformBooleanLiteral(node: luaparse.BooleanLiteral): ts.Expression {
         if (node.value) {
             return this.builder.createTrue();
         } else {
@@ -202,7 +206,7 @@ export class Transformer {
         }
     }
 
-    private transformBinaryExpression(node: lua.BinaryExpression): ts.BinaryExpression {
+    private transformBinaryExpression(node: luaparse.BinaryExpression): ts.BinaryExpression {
         let operator: ts.SyntaxKind;
         switch (node.operator) {
             case "%":
@@ -255,7 +259,7 @@ export class Transformer {
         );
     }
 
-    private transformLogicalExpression(node: lua.LogicalExpression): ts.BinaryExpression {
+    private transformLogicalExpression(node: luaparse.LogicalExpression): ts.BinaryExpression {
         const operator =
             node.operator === "and"
                 ? ts.SyntaxKind.AmpersandAmpersandToken
@@ -273,7 +277,7 @@ export class Transformer {
         );
     }
 
-    private transformUnaryExpression(node: lua.UnaryExpression): ts.UnaryExpression {
+    private transformUnaryExpression(node: luaparse.UnaryExpression): ts.UnaryExpression {
         let operator: ts.SyntaxKind;
         switch (node.operator) {
             case "#":
@@ -297,14 +301,14 @@ export class Transformer {
         return this.builder.createPrefix(operator, this.transformExpression(node.argument));
     }
 
-    private transformMemberExpression(node: lua.MemberExpression): ts.PropertyAccessExpression {
+    private transformMemberExpression(node: luaparse.MemberExpression): ts.PropertyAccessExpression {
         return this.builder.createPropertyAccess(
             this.transformExpression(node.base),
             this.transformIdentifier(node.identifier)
         );
     }
 
-    private transformIdentifier(node: lua.Identifier): ts.Identifier {
+    private transformIdentifier(node: luaparse.Identifier): ts.Identifier {
         let chosenName: string;
         switch (node.name) {
             case "_G": {
@@ -318,8 +322,8 @@ export class Transformer {
         return this.builder.createIdentifier(chosenName, node);
     }
 
-    private transformIfStatement(node: lua.IfStatement): ts.IfStatement {
-        const ifClause: lua.IfClause = node.clauses[0];
+    private transformIfStatement(node: luaparse.IfStatement): ts.IfStatement {
+        const ifClause: luaparse.IfClause = node.clauses[0];
         const rootIfStatement = this.builder.createIf(
             this.transformExpression(ifClause.condition),
             this.builder.createBlock(
@@ -374,7 +378,7 @@ export class Transformer {
         }
     }
 
-    private transformForNumericStatement(node: lua.ForNumericStatement): ts.ForStatement {
+    private transformForNumericStatement(node: luaparse.ForNumericStatement): ts.ForStatement {
         const identifier = this.transformIdentifier(node.variable);
         const incrementor =
             node.step === null
@@ -410,7 +414,7 @@ export class Transformer {
         );
     }
 
-    private transformForGenericStatement(node: lua.ForGenericStatement): ts.ForOfStatement {
+    private transformForGenericStatement(node: luaparse.ForGenericStatement): ts.ForOfStatement {
         return this.builder.createForOf(
             undefined,
             this.builder.createVariableDeclarationList(
@@ -438,7 +442,7 @@ export class Transformer {
         );
     }
 
-    private transformWhileStatement(node: lua.WhileStatement): ts.WhileStatement {
+    private transformWhileStatement(node: luaparse.WhileStatement): ts.WhileStatement {
         return this.builder.createWhile(
             this.transformExpression(node.condition),
             this.builder.createBlock(this.transformBlock(node.body), true, node),
@@ -446,11 +450,11 @@ export class Transformer {
         );
     }
 
-    private transformBreakStatement(node: lua.BreakStatement): ts.BreakStatement {
+    private transformBreakStatement(node: luaparse.BreakStatement): ts.BreakStatement {
         return this.builder.createBreak(node);
     }
 
-    private transformTableKeyString(node: lua.TableKeyString): ts.ObjectLiteralElementLike {
+    private transformTableKeyString(node: luaparse.TableKeyString): ts.ObjectLiteralElementLike {
         const name =
             node.key.type === "Identifier"
                 ? this.transformIdentifier(node.key)
@@ -459,12 +463,12 @@ export class Transformer {
         return this.builder.createPropertyAssignment(name, this.transformExpression(node.value), node);
     }
 
-    private transformTableValue(node: lua.TableValue): ts.Expression {
+    private transformTableValue(node: luaparse.TableValue): ts.Expression {
         return this.transformExpression(node.value);
     }
 
     private transformTableConstructorExpression(
-        node: lua.TableConstructorExpression
+        node: luaparse.TableConstructorExpression
     ): ts.ObjectLiteralExpression | ts.ArrayLiteralExpression {
         const usingTableKeyStrings = node.fields.some(field => field.type === "TableKeyString");
         const usingTableValues = node.fields.some(field => field.type === "TableValue");
@@ -474,18 +478,18 @@ export class Transformer {
 
         if (usingTableValues) {
             return this.builder.createArrayLiteral(
-                node.fields.map(field => this.transformTableValue(field as lua.TableValue))
+                node.fields.map(field => this.transformTableValue(field as luaparse.TableValue))
             );
         } else {
             return this.builder.createObjectLiteral(
-                node.fields.map(field => this.transformTableKeyString(field as lua.TableKeyString))
+                node.fields.map(field => this.transformTableKeyString(field as luaparse.TableKeyString))
             );
         }
     }
 
     private transformParameterDeclaration(
-        node: lua.Identifier | lua.VarargLiteral,
-        availableTags: tags.Tag[]
+        node: luaparse.Identifier | luaparse.VarargLiteral,
+        availableTags: ldoc.Tag[]
     ): ts.ParameterDeclaration {
         const tparams = helper.getParameterTParam(node, availableTags);
         if (Array.isArray(tparams)) {
@@ -499,7 +503,7 @@ export class Transformer {
                 this.diagnostics.push(`Many @tparams found for parameter ${name}. Using the first one.`);
             }
         }
-        const tparam: tags.TParamTag | undefined = Array.isArray(tparams) ? tparams[0] : tparams;
+        const tparam: ldoc.TParamTag | undefined = Array.isArray(tparams) ? tparams[0] : tparams;
         const type = tparam ? this.transformType(tparam.type) : undefined;
 
         switch (node.type) {
@@ -528,16 +532,16 @@ export class Transformer {
         }
     }
 
-    private transformNumericLiteral(node: lua.NumericLiteral): ts.NumericLiteral {
+    private transformNumericLiteral(node: luaparse.NumericLiteral): ts.NumericLiteral {
         return this.builder.createNumericLiteral(node.value.toString(), node);
     }
 
-    private transformStringLiteral(node: lua.StringLiteral): ts.StringLiteral {
+    private transformStringLiteral(node: luaparse.StringLiteral): ts.StringLiteral {
         return this.builder.createStringLiteral(node.value, node);
     }
 
     private transformAssignmentLeftHandSideExpression(
-        node: lua.Identifier | lua.MemberExpression | lua.IndexExpression
+        node: luaparse.Identifier | luaparse.MemberExpression | luaparse.IndexExpression
     ): ts.Identifier | ts.PropertyAccessExpression | ts.ElementAccessExpression {
         switch (node.type) {
             case "Identifier":
@@ -550,8 +554,8 @@ export class Transformer {
     }
 
     private transformAssignment(
-        variables: Array<lua.Identifier | lua.MemberExpression | lua.IndexExpression>,
-        expressions: lua.Expression[]
+        variables: Array<luaparse.Identifier | luaparse.MemberExpression | luaparse.IndexExpression>,
+        expressions: luaparse.Expression[]
     ):
         | {
               left: ts.Identifier | ts.PropertyAccessExpression | ts.ElementAccessExpression;
@@ -578,18 +582,18 @@ export class Transformer {
         }
     }
 
-    private transformAssignmentStatement(node: lua.AssignmentStatement): ts.ExpressionStatement {
+    private transformAssignmentStatement(node: luaparse.AssignmentStatement): ts.ExpressionStatement {
         const { left, right } = this.transformAssignment(node.variables, node.init);
         return this.builder.createExpressionStatement(
             this.builder.createBinary(left, this.builder.createToken(ts.SyntaxKind.FirstAssignment, node), right, node)
         );
     }
 
-    private transformCallStatement(node: lua.CallStatement): ts.ExpressionStatement {
+    private transformCallStatement(node: luaparse.CallStatement): ts.ExpressionStatement {
         return this.builder.createExpressionStatement(this.transformCallExpression(node.expression));
     }
 
-    private transformCallExpression(node: lua.CallExpression): ts.CallExpression {
+    private transformCallExpression(node: luaparse.CallExpression): ts.CallExpression {
         return this.builder.createCall(
             this.transformExpression(node.base),
             undefined,
@@ -598,7 +602,7 @@ export class Transformer {
         );
     }
 
-    private transformStringCallExpression(node: lua.StringCallExpression): ts.CallExpression {
+    private transformStringCallExpression(node: luaparse.StringCallExpression): ts.CallExpression {
         return this.builder.createCall(
             this.transformExpression(node.base),
             undefined,
@@ -607,7 +611,7 @@ export class Transformer {
         );
     }
 
-    private transformTableCallExpression(node: lua.TableCallExpression): ts.CallExpression {
+    private transformTableCallExpression(node: luaparse.TableCallExpression): ts.CallExpression {
         return this.builder.createCall(
             this.transformExpression(node.base),
             undefined,
@@ -617,8 +621,8 @@ export class Transformer {
     }
 
     private transformLocalBindingPattern(
-        variables: lua.Identifier[],
-        expressions: lua.Expression[]
+        variables: luaparse.Identifier[],
+        expressions: luaparse.Expression[]
     ):
         | {
               left: ts.Identifier;
@@ -647,7 +651,7 @@ export class Transformer {
         }
     }
 
-    private transformLocalStatement(node: lua.LocalStatement): ts.VariableStatement {
+    private transformLocalStatement(node: luaparse.LocalStatement): ts.VariableStatement {
         const { left, right } = this.transformLocalBindingPattern(node.variables, node.init);
         const [tag] = helper.getTagsOfKind("type", node, this.chunk);
         const type = tag ? this.transformType(tag.type) : undefined;
@@ -663,7 +667,7 @@ export class Transformer {
         );
     }
 
-    private transformReturnStatement(node: lua.ReturnStatement): ts.ReturnStatement | ts.ExportAssignment {
+    private transformReturnStatement(node: luaparse.ReturnStatement): ts.ReturnStatement | ts.ExportAssignment {
         const returnArguments = node.arguments.map(argument => this.transformExpression(argument));
         const returnExpression =
             returnArguments.length > 0
@@ -680,11 +684,11 @@ export class Transformer {
     }
 
     private transformFunctionDeclaration(
-        node: lua.FunctionDeclaration
+        node: luaparse.FunctionDeclaration
     ): ts.FunctionDeclaration | ts.ExpressionStatement {
         const comments = helper.getComments(this.chunk, node);
         const availableTags = helper.getTags(comments);
-        const treturns = availableTags.filter(currentTag => currentTag.kind === "treturn") as tags.TReturnTag[];
+        const treturns = availableTags.filter(currentTag => currentTag.kind === "treturn") as ldoc.TReturnTag[];
         const treturnTypes = treturns.map(treturn => this.transformType(treturn.type));
         const type =
             treturnTypes.length > 0
@@ -712,7 +716,7 @@ export class Transformer {
                         type: "Identifier",
                         name: "self",
                         range: node.range,
-                        raw: "self"
+                        raw: "self",
                     });
                 }
 
@@ -730,14 +734,14 @@ export class Transformer {
         }
     }
 
-    private transformFunctionDeclarationAsMethod(node: lua.FunctionDeclaration): ts.MethodDeclaration {
+    private transformFunctionDeclarationAsMethod(node: luaparse.FunctionDeclaration): ts.MethodDeclaration {
         if (node.identifier.type === "Identifier") {
             throw new Error("Expected a member expression");
         }
 
         const comments = helper.getComments(this.chunk, node);
         const availableTags = helper.getTags(comments);
-        const treturns = availableTags.filter(currentTag => currentTag.kind === "treturn") as tags.TReturnTag[];
+        const treturns = availableTags.filter(currentTag => currentTag.kind === "treturn") as ldoc.TReturnTag[];
         const treturnTypes = treturns.map(treturn => this.transformType(treturn.type));
         const type =
             treturnTypes.length > 0
@@ -760,10 +764,10 @@ export class Transformer {
         );
     }
 
-    private transformFunctionDeclarationAsExportedFunction(node: lua.FunctionDeclaration): ts.FunctionDeclaration {
+    private transformFunctionDeclarationAsExportedFunction(node: luaparse.FunctionDeclaration): ts.FunctionDeclaration {
         const comments = helper.getComments(this.chunk, node);
         const availableTags = helper.getTags(comments);
-        const treturns = availableTags.filter(currentTag => currentTag.kind === "treturn") as tags.TReturnTag[];
+        const treturns = availableTags.filter(currentTag => currentTag.kind === "treturn") as ldoc.TReturnTag[];
         const treturnTypes = treturns.map(treturn => this.transformType(treturn.type));
         const type =
             treturnTypes.length > 0
@@ -798,7 +802,7 @@ export class Transformer {
     }
 
     private transformFunctionExpression(
-        node: lua.FunctionExpression | lua.FunctionDeclaration,
+        node: luaparse.FunctionExpression | luaparse.FunctionDeclaration,
         modifiers?: ReadonlyArray<ts.Modifier>
     ): ts.FunctionExpression {
         return this.builder.createFunctionExpression(

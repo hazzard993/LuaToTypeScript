@@ -26,6 +26,7 @@ ltts -d library.lua
 ```
 
 Supports the following tags:
+
 - `@type`
 - `@tparam`
 - `@treturn`

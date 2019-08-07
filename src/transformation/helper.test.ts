@@ -1,5 +1,4 @@
 import * as luaparse from "luaparse";
-import * as lua from "./ast";
 import * as helper from "./helper";
 
 describe("Test getCommentsAsString", () => {
@@ -13,7 +12,7 @@ describe("Test getCommentsAsString", () => {
         ["--[[square bracket comment]]i = 0", 0, "square bracket comment"],
     ])("Get comments from %s", (code: string, nodeIndex: number, fullCommentText: string) => {
         code = code.replace(/,/g, "\n");
-        const ast = luaparse.parse(code, { ranges: true }) as lua.Chunk;
+        const ast = luaparse.parse(code, { ranges: true });
         const commentText = helper.getCommentsAsString(ast, ast.body[nodeIndex]);
         expect(commentText).toEqual(fullCommentText);
     });
@@ -29,7 +28,7 @@ describe("Test getCommentsAsString", () => {
         ["--[[square bracket comment]]i = 0", 0, "square bracket comment"],
     ])("Get comments from %s", (code: string, nodeIndex: number, fullCommentText: string) => {
         code = code.replace(/,/g, "\n");
-        const ast = luaparse.parse(code, { ranges: true }) as lua.Chunk;
+        const ast = luaparse.parse(code, { ranges: true });
         const commentText = helper.getCommentsAsString(ast, ast.body[nodeIndex]);
         expect(commentText).toEqual(fullCommentText);
     });

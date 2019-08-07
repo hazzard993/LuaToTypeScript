@@ -1,6 +1,5 @@
 import * as luaparse from "luaparse";
-import * as lua from "./ast";
-import * as transpile from "./transpile";
+import * as diagnose from "../diagnose";
 import { Transformer } from "./Transformer";
 
 describe("Check for transformer errors", () => {
@@ -13,7 +12,7 @@ describe("Check for transformer errors", () => {
             ["local a, b = 1, 2", "Identifier x2 -> NumericLiteral x2"],
             ["local a, b = xy()", "Identifier x2 -> CallExpression"],
         ])("%p can be transformed. (%p)", luaCode => {
-            const ast = luaparse.parse(luaCode, { ranges: true }) as lua.Chunk;
+            const ast = luaparse.parse(luaCode, { ranges: true });
             expect(() => transformer.transformChunk(ast)).not.toThrowError();
         });
     });
@@ -27,7 +26,7 @@ describe("Check for transformer errors", () => {
             ["table[index], table[index] = 1, 2", "IndexExpression x2 -> NumericLiteral x2"],
             ["a, b = 1", "IndexExpression x2 -> NumericLiteral (unbalanced)"],
         ])("%p can be transformed. (%p)", luaCode => {
-            const ast = luaparse.parse(luaCode, { ranges: true }) as lua.Chunk;
+            const ast = luaparse.parse(luaCode, { ranges: true });
             expect(() => transformer.transformChunk(ast)).not.toThrowError();
         });
     });
@@ -38,7 +37,7 @@ describe("Check for transformer errors", () => {
             ["function a(...) end", "FunctionDeclaration + Vararg Parameter"],
             ["function a(b, c, ...) end", "FunctionDeclaration + Parameters x2 + Vararg Parameter"],
         ])("%p can be transformed. (%p)", luaCode => {
-            const ast = luaparse.parse(luaCode, { ranges: true }) as lua.Chunk;
+            const ast = luaparse.parse(luaCode, { ranges: true });
             expect(() => transformer.transformChunk(ast)).not.toThrowError();
         });
     });
@@ -49,7 +48,7 @@ describe("Detect diagnostic errors", () => {
         test.each([["LocalStatement string to number is not assignable", "-- @type number\nlocal x = 'string'"]])(
             "LocalStatement %p diagnostic",
             (_, luaCode) => {
-                const diagnostics = transpile.getSemanticDiagnosticsFromLuaCode(luaCode);
+                const diagnostics = diagnose.getSemanticDiagnosticsFromLuaCode(luaCode);
                 expect(diagnostics.length).toBeGreaterThan(0);
                 expect(diagnostics[0].messageText).toBe(`Type '"string"' is not assignable to type 'number'.`);
             }

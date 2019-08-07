@@ -2,6 +2,7 @@ import * as program from "commander";
 import { emit } from "./emit";
 import { transpile } from "./transpile";
 import { generateDeclarations } from "./declaration";
+import { getSemanticDiagnostics } from "./diagnose";
 
 program
     .usage("[options] <luaFiles...>")
@@ -11,7 +12,7 @@ program
     .option("-d, --declaration", "Generate declaration files only");
 
 export function parseCommandLine(args: string[]): void {
-    program.parse(process.argv);
+    program.parse(args);
 
     if (program.args) {
         const showSemanticErrors = program.showSemanticErrors === true;
@@ -24,8 +25,9 @@ export function parseCommandLine(args: string[]): void {
         });
 
         if (showSemanticErrors) {
-            transpileResult.transpiledFiles.forEach(transpiledFile => {
-                transpiledFile.diagnostics.forEach(diagnostic => console.log(diagnostic));
+            const diagnostics = getSemanticDiagnostics(transpileResult, {});
+            diagnostics.forEach(diagnostic => {
+                console.log(diagnostic.messageText);
             });
         }
 

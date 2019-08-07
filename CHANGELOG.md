@@ -1,7 +1,7 @@
 ## Version 0.1.0
 
 - Added `--declaration`. This generates _.d.ts_ files instead of _.ts_ files.
-    - Typings are extracted using _lua-types_
+  - Typings are extracted using _lua-types_
 
 ## Version 0.0.6
 
@@ -46,7 +46,7 @@ return x
 ```ts
 let x = 0;
 function func() {
-    return 5;
+  return 5;
 }
 export = x;
 ```
@@ -68,7 +68,7 @@ This transforms into:
 
 ```ts
 class MyClass {
-    method(): number { }
+  method(): number {}
 }
 export = myclass;
 ```

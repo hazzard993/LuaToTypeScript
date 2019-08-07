@@ -1,7 +1,7 @@
-import * as lua from "./ast";
+import * as luaparse from "luaparse";
 import * as helper from "./helper";
 
-export function canBeTransformedToModule(statements: lua.Statement[], chunk: lua.Chunk): boolean {
+export function canBeTransformedToModule(statements: luaparse.Statement[], chunk: luaparse.Chunk): boolean {
     const [firstStatement, ...remainingStatements] = statements;
     if (firstStatement && firstStatement.type === "LocalStatement") {
         const [tag] = helper.getTagsOfKind("module", firstStatement, chunk);
