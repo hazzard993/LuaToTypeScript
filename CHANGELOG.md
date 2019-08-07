@@ -1,4 +1,36 @@
-## Version 0.1.0
+## Version 0.2.0
+
+- Declarations are now generated using typing information found in a _tsconfig.json_ file in the current directory.
+
+```json
+{
+  "compilerOptions": {
+    "types": ["lua-types/jit"]
+  }
+}
+```
+
+If _lua-types_ is installed as a package in the current directory, it will be used when trying to extract typing information from Lua files.
+
+```lua
+return setmetatable({}, {})
+```
+
+If _lua-types_ is in the current directory and _tsconfig.json_ is configured as above, TypeScript will recognize what _setmetatable_ does and appropriately type the information.
+
+```ts
+declare const _default: {};
+export = _default;
+```
+
+If this did not happen, TypeScript doesn't understand what _setmetatable_ does and assumes it returns anything.
+
+```ts
+declare const _default: any;
+export = _default;
+```
+
+## Version 0.1.1
 
 - Added `--declaration`. This generates _.d.ts_ files instead of _.ts_ files.
   - Typings are extracted using _lua-types_
