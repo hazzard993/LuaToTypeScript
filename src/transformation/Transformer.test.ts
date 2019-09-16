@@ -12,7 +12,7 @@ describe("Check for transformer errors", () => {
             ["local a, b = 1, 2", "Identifier x2 -> NumericLiteral x2"],
             ["local a, b = xy()", "Identifier x2 -> CallExpression"],
         ])("%p can be transformed. (%p)", luaCode => {
-            const ast = luaparse.parse(luaCode, { ranges: true });
+            const ast = luaparse.parse(luaCode, { ranges: true, locations: true });
             expect(() => transformer.transformChunk(ast)).not.toThrowError();
         });
     });
@@ -26,7 +26,7 @@ describe("Check for transformer errors", () => {
             ["table[index], table[index] = 1, 2", "IndexExpression x2 -> NumericLiteral x2"],
             ["a, b = 1", "IndexExpression x2 -> NumericLiteral (unbalanced)"],
         ])("%p can be transformed. (%p)", luaCode => {
-            const ast = luaparse.parse(luaCode, { ranges: true });
+            const ast = luaparse.parse(luaCode, { ranges: true, locations: true });
             expect(() => transformer.transformChunk(ast)).not.toThrowError();
         });
     });
@@ -37,7 +37,7 @@ describe("Check for transformer errors", () => {
             ["function a(...) end", "FunctionDeclaration + Vararg Parameter"],
             ["function a(b, c, ...) end", "FunctionDeclaration + Parameters x2 + Vararg Parameter"],
         ])("%p can be transformed. (%p)", luaCode => {
-            const ast = luaparse.parse(luaCode, { ranges: true });
+            const ast = luaparse.parse(luaCode, { ranges: true, locations: true });
             expect(() => transformer.transformChunk(ast)).not.toThrowError();
         });
     });

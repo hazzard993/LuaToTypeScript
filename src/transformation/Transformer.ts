@@ -716,6 +716,7 @@ export class Transformer {
                         type: "Identifier",
                         name: "self",
                         range: node.range,
+                        loc: node.identifier.loc,
                         raw: "self",
                     });
                 }

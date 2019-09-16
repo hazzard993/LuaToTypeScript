@@ -1,6 +1,8 @@
 import * as luaparse from "luaparse";
 import * as ts from "typescript";
 import { Transformer } from "./transformation/Transformer";
+import { Printer } from "./transformation/printer";
+import { SourceMapConsumer } from "source-map";
 
 export interface TranspiledFile {
     ast: WeakMap<ts.Node, luaparse.Node | undefined>;
@@ -51,19 +53,28 @@ export function transformLuaToTypeScript(
     transformer = new Transformer(undefined, options)
 ): TranspiledFile {
     const sourceFile = ts.createSourceFile("dummy.ts", "", ts.ScriptTarget.ESNext);
-    const luaAst = luaparse.parse(luaCode, { ranges: true }) as luaparse.Chunk;
+    const luaAst = luaparse.parse(luaCode, { ranges: true, locations: true });
     const statements = transformer.transformChunk(luaAst);
     const ast = transformer.getBuilder().getMap();
 
-    const printer = ts.createPrinter({
+    const printer = new Printer(ts.createPrinter({
         newLine: ts.NewLineKind.LineFeed,
-    });
+    }));
 
-    const tsCode = statements
-        .map(statement => {
-            return printer.printNode(ts.EmitHint.Unspecified, statement, sourceFile);
-        })
-        .join("\n");
+    const { code: tsCode, map } = printer.printSourceFile(ts.updateSourceFileNode(sourceFile, statements), ast);
+
+    new SourceMapConsumer(map.toJSON()).then(consumer => {
+        console.log(consumer.generatedPositionFor({
+            source: fileName,
+            line: 3,
+            column: 0
+        }));
+    });
+    // const tsCode = statements
+    //     .map(statement => {
+    //         return printer.printNode(ts.EmitHint.Unspecified, statement, sourceFile);
+    //     })
+    //     .join("\n");
 
     return {
         ast,

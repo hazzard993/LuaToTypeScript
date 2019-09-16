@@ -1,5 +1,5 @@
 declare module "luaparse" {
-    export function parse(luaCode: string, options: { ranges: boolean }): Chunk;
+    export function parse(luaCode: string, options: { ranges: boolean, locations: boolean }): Chunk;
 
     export type TextRange = [number, number];
 
@@ -7,6 +7,16 @@ declare module "luaparse" {
 
     export interface Node {
         range: TextRange;
+        loc: {
+            start: {
+                line: number;
+                column: number;
+            };
+            end: {
+                line: number;
+                column: number;
+            };
+        };
         raw: string;
     }
 

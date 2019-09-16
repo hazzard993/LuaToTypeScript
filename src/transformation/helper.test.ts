@@ -12,7 +12,7 @@ describe("Test getCommentsAsString", () => {
         ["--[[square bracket comment]]i = 0", 0, "square bracket comment"],
     ])("Get comments from %s", (code: string, nodeIndex: number, fullCommentText: string) => {
         code = code.replace(/,/g, "\n");
-        const ast = luaparse.parse(code, { ranges: true });
+        const ast = luaparse.parse(code, { ranges: true, locations: true });
         const commentText = helper.getCommentsAsString(ast, ast.body[nodeIndex]);
         expect(commentText).toEqual(fullCommentText);
     });
@@ -28,7 +28,7 @@ describe("Test getCommentsAsString", () => {
         ["--[[square bracket comment]]i = 0", 0, "square bracket comment"],
     ])("Get comments from %s", (code: string, nodeIndex: number, fullCommentText: string) => {
         code = code.replace(/,/g, "\n");
-        const ast = luaparse.parse(code, { ranges: true });
+        const ast = luaparse.parse(code, { ranges: true, locations: true });
         const commentText = helper.getCommentsAsString(ast, ast.body[nodeIndex]);
         expect(commentText).toEqual(fullCommentText);
     });
