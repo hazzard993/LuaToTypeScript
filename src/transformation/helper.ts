@@ -70,12 +70,22 @@ export function getComments(chunk: luaparse.Chunk, node: luaparse.Node): luapars
 
 export function getTags(comments: luaparse.Comment[]): ldoc.Tag[] {
     const availableTags: ldoc.Tag[] = [];
+    const typeHints = ["string", "number", "int", "bool", "func", "tab", "thread"];
     comments.forEach(comment => {
         const [, tagName, ...text] = comment.raw.split(" ");
         switch (tagName) {
             case "@param": {
                 const [name, ...description] = text;
-                availableTags.push(ldoc.createParamTag(name, description.join(" ")));
+                let type: string | undefined;
+                for (let i = description.length - 1; i >= 0; i--) {
+                    const current = description[i].replace(/[\.,!\"']+$/, "");
+                    if (!type && typeHints.includes(current)) {
+                        type = current;
+                    }
+                }
+
+                if (type) console.log("@param", name, type);
+                availableTags.push(type ? ldoc.createTParamTag(name, type, description.join(" ")) : ldoc.createParamTag(name, description.join(" ")));
                 break;
             }
             case "@tparam": {
@@ -85,7 +95,15 @@ export function getTags(comments: luaparse.Comment[]): ldoc.Tag[] {
             }
             case "@return": {
                 const [...description] = text;
-                availableTags.push(ldoc.createReturnTag(description.join(" ")));
+                let type: string | undefined;
+                for (let i = description.length - 1; i >= 0; i--) {
+                    const current = description[i].replace(/[\.,!\"']+$/, "");
+                    if (!type && typeHints.includes(current)) {
+                        type = current;
+                    }
+                }
+                if (type) console.log("@return", type);
+                availableTags.push(type ? ldoc.createTReturnTag(type, description.join(" ")) : ldoc.createReturnTag(description.join(" ")));
                 break;
             }
             case "@treturn": {
