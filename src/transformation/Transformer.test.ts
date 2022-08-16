@@ -11,7 +11,7 @@ describe("Check for transformer errors", () => {
             ["local a = 'string'", "Identifier -> StringLiteral"],
             ["local a, b = 1, 2", "Identifier x2 -> NumericLiteral x2"],
             ["local a, b = xy()", "Identifier x2 -> CallExpression"],
-        ])("%p can be transformed. (%p)", luaCode => {
+        ])("%p can be transformed. (%p)", (luaCode) => {
             const ast = luaparse.parse(luaCode, { ranges: true, locations: true });
             expect(() => transformer.transformChunk(ast)).not.toThrowError();
         });
@@ -25,7 +25,7 @@ describe("Check for transformer errors", () => {
             ["a.b, a.c = 1", "MemberExpression x2 -> NumericLiteral x2"],
             ["table[index], table[index] = 1, 2", "IndexExpression x2 -> NumericLiteral x2"],
             ["a, b = 1", "IndexExpression x2 -> NumericLiteral (unbalanced)"],
-        ])("%p can be transformed. (%p)", luaCode => {
+        ])("%p can be transformed. (%p)", (luaCode) => {
             const ast = luaparse.parse(luaCode, { ranges: true, locations: true });
             expect(() => transformer.transformChunk(ast)).not.toThrowError();
         });
@@ -36,7 +36,7 @@ describe("Check for transformer errors", () => {
             ["function a(b, c) end", "FunctionDeclaration + Parameters x2"],
             ["function a(...) end", "FunctionDeclaration + Vararg Parameter"],
             ["function a(b, c, ...) end", "FunctionDeclaration + Parameters x2 + Vararg Parameter"],
-        ])("%p can be transformed. (%p)", luaCode => {
+        ])("%p can be transformed. (%p)", (luaCode) => {
             const ast = luaparse.parse(luaCode, { ranges: true, locations: true });
             expect(() => transformer.transformChunk(ast)).not.toThrowError();
         });
@@ -45,9 +45,9 @@ describe("Check for transformer errors", () => {
         test.each([
             ["a()", "CallStatement + No Args"],
             ["a(1, 2, 3)", "CallStatement + 3 Args"],
-            ["a\"\"", "StringCallExpression"],
+            ['a""', "StringCallExpression"],
             ["a{}", "TableCallExpression"],
-        ])("%p can be transformed. (%p)", luaCode => {
+        ])("%p can be transformed. (%p)", (luaCode) => {
             const ast = luaparse.parse(luaCode, { ranges: true, locations: true });
             expect(() => transformer.transformChunk(ast)).not.toThrowError();
         });

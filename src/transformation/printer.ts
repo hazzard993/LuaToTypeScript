@@ -11,10 +11,13 @@ export class Printer {
 
     constructor(private printer: ts.Printer) {}
 
-    public printSourceFile(sourceFile: ts.SourceFile, map: WeakMap<ts.Node, luaparse.Node | undefined>): CodeWithSourceMap {
+    public printSourceFile(
+        sourceFile: ts.SourceFile,
+        map: WeakMap<ts.Node, luaparse.Node | undefined>
+    ): CodeWithSourceMap {
         this.map = map;
         this.sourceFile = sourceFile;
-        const statements = sourceFile.statements.map(statement => this.printStatement(statement));
+        const statements = sourceFile.statements.map((statement) => this.printStatement(statement));
         const rootNode = new SourceNode(null, null, sourceFile.fileName, statements);
         return rootNode.toStringWithSourceMap();
     }
@@ -35,7 +38,13 @@ export class Printer {
         const name = this.printer.printNode(ts.EmitHint.Unspecified, node, this.sourceFile);
         const original = this.map && this.map.get(node);
         if (original) {
-            return new SourceNode(original.loc.start.line, original.loc.start.column, this.sourceFile.fileName, `${this.currentIndent}${chunks ? chunks : name}`, name);
+            return new SourceNode(
+                original.loc.start.line,
+                original.loc.start.column,
+                this.sourceFile.fileName,
+                `${this.currentIndent}${chunks ? chunks : name}`,
+                name
+            );
         }
         return new SourceNode(null, null, this.sourceFile.fileName, chunks ? chunks : name, name);
     }
@@ -71,10 +80,10 @@ export class Printer {
         chunks.push("function ");
         chunks.push(this.printIdentifier(node.name));
         chunks.push("(");
-        chunks.push(...node.parameters.map(parameter => this.printParameterDeclaration(parameter)));
+        chunks.push(...node.parameters.map((parameter) => this.printParameterDeclaration(parameter)));
         chunks.push(") {\n");
         this.pushIndent();
-        chunks.push(...node.body.statements.map(statement => this.printStatement(statement)));
+        chunks.push(...node.body.statements.map((statement) => this.printStatement(statement)));
         this.popIndent();
         chunks.push("}");
         return this.createSourceNode(node, chunks);

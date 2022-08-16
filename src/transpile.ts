@@ -22,7 +22,7 @@ export interface Options {
 export function transpile(files: string[], options: Options): TranspileResult {
     const transpiledFiles = files
         .filter(ts.sys.fileExists)
-        .map(fileName => {
+        .map((fileName) => {
             return {
                 contents: ts.sys.readFile(fileName, "utf8") || "",
                 fileName,
@@ -60,7 +60,7 @@ export function transformLuaToTypeScript(
     });
 
     const tsCode = statements
-        .map(statement => {
+        .map((statement) => {
             return printer.printNode(ts.EmitHint.Unspecified, statement, sourceFile);
         })
         .join("\n");

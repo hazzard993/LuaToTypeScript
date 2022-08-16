@@ -14,7 +14,7 @@ export function generateDeclarations(result: TranspileResult): TranspileResult {
     program.emit(undefined, writeFile, undefined, true);
 
     return {
-        transpiledFiles: Object.keys(outputFiles).map(outputFileName => {
+        transpiledFiles: Object.keys(outputFiles).map((outputFileName) => {
             return {
                 ast: new WeakMap(),
                 diagnostics: [],

@@ -28,7 +28,7 @@ export function getParameterTParam(
 ): ldoc.TParamTag | ldoc.TParamTag[] {
     const name = parameter.type === "Identifier" ? parameter.name : parameter.value;
     const tparams = availableTags.filter(
-        currentTag => currentTag.kind === "tparam" && currentTag.name === name
+        (currentTag) => currentTag.kind === "tparam" && currentTag.name === name
     ) as ldoc.TParamTag[];
     if (tparams.length === 1) {
         return tparams[0];
@@ -45,12 +45,12 @@ export function getTagsOfKind(kind: "type", node: luaparse.Node, chunk: luaparse
 export function getTagsOfKind(kind: "classmod", node: luaparse.Node, chunk: luaparse.Chunk): ldoc.ClassMod[];
 export function getTagsOfKind(kind: "module", node: luaparse.Node, chunk: luaparse.Chunk): ldoc.ModuleTag[];
 export function getTagsOfKind(kind: ldoc.Tag["kind"], node: luaparse.Node, chunk: luaparse.Chunk): ldoc.Tag[] {
-    return getTags(getComments(chunk, node)).filter(tag => tag.kind === kind);
+    return getTags(getComments(chunk, node)).filter((tag) => tag.kind === kind);
 }
 
 export function getCommentsAsString(chunk: luaparse.Chunk, node: luaparse.Node): string {
     return getComments(chunk, node)
-        .map(comment => comment.value)
+        .map((comment) => comment.value)
         .join(" ");
 }
 
@@ -70,7 +70,7 @@ export function getComments(chunk: luaparse.Chunk, node: luaparse.Node): luapars
 
 export function getTags(comments: luaparse.Comment[]): ldoc.Tag[] {
     const availableTags: ldoc.Tag[] = [];
-    comments.forEach(comment => {
+    comments.forEach((comment) => {
         const [, tagName, ...text] = comment.raw.split(" ");
         switch (tagName) {
             case "@param": {

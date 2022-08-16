@@ -8,7 +8,7 @@ export function canBeTransformedToModule(statements: luaparse.Statement[], chunk
         if (tag) {
             // Further function declarations could be nested
             if (
-                !remainingStatements.some(statement => {
+                !remainingStatements.some((statement) => {
                     return (
                         statement.type === "FunctionDeclaration" &&
                         statement.identifier.type === "MemberExpression" &&

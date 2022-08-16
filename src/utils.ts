@@ -4,7 +4,7 @@ import { TranspiledFile } from "./transpile";
 
 export function createVirtualProgram(typeScriptFiles: TranspiledFile[], options: ts.CompilerOptions): ts.Program {
     const sourceFiles: Record<string, string> = {};
-    typeScriptFiles.forEach(sourceFile => {
+    typeScriptFiles.forEach((sourceFile) => {
         sourceFiles[sourceFile.fileName.replace(".lua", ".ts")] = sourceFile.tsCode;
     });
 

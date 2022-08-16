@@ -26,7 +26,7 @@ export function parseCommandLine(args: string[]): void {
 
         if (showSemanticErrors) {
             const diagnostics = getSemanticDiagnostics(transpileResult, {});
-            diagnostics.forEach(diagnostic => {
+            diagnostics.forEach((diagnostic) => {
                 console.log(diagnostic.messageText);
             });
         }
