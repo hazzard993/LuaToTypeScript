@@ -1,3 +1,11 @@
+## Version 0.2.2
+
+- Fixed node `TableCallExpression`, this is a call expression using a table as the only argument.
+
+```json
+fn{}
+```
+
 ## Version 0.2.0
 
 - Declarations are now generated using typing information found in a _tsconfig.json_ file in the current directory.
