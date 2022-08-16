@@ -139,7 +139,7 @@ declare module "luaparse" {
 
     export interface CallStatement extends Node {
         type: "CallStatement";
-        expression: CallExpression;
+        expression: CallExpression | StringCallExpression | TableCallExpression;
     }
 
     export interface CallExpression extends Node {
@@ -157,7 +157,7 @@ declare module "luaparse" {
     export interface TableCallExpression extends Node {
         type: "TableCallExpression";
         base: Identifier | MemberExpression;
-        argument: TableConstructorExpression;
+        arguments: TableConstructorExpression;
     }
 
     export interface TableConstructorExpression extends Node {

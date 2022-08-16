@@ -41,6 +41,17 @@ describe("Check for transformer errors", () => {
             expect(() => transformer.transformChunk(ast)).not.toThrowError();
         });
     });
+    describe("Call Expressions", () => {
+        test.each([
+            ["a()", "CallStatement + No Args"],
+            ["a(1, 2, 3)", "CallStatement + 3 Args"],
+            ["a\"\"", "StringCallExpression"],
+            ["a{}", "TableCallExpression"],
+        ])("%p can be transformed. (%p)", luaCode => {
+            const ast = luaparse.parse(luaCode, { ranges: true, locations: true });
+            expect(() => transformer.transformChunk(ast)).not.toThrowError();
+        });
+    });
 });
 
 describe("Detect diagnostic errors", () => {

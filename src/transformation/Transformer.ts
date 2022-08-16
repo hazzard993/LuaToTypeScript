@@ -590,7 +590,7 @@ export class Transformer {
     }
 
     private transformCallStatement(node: luaparse.CallStatement): ts.ExpressionStatement {
-        return this.builder.createExpressionStatement(this.transformCallExpression(node.expression));
+        return this.builder.createExpressionStatement(this.transformExpression(node.expression));
     }
 
     private transformCallExpression(node: luaparse.CallExpression): ts.CallExpression {
@@ -615,7 +615,7 @@ export class Transformer {
         return this.builder.createCall(
             this.transformExpression(node.base),
             undefined,
-            [this.transformExpression(node.argument)],
+            [this.transformExpression(node.arguments)],
             node
         );
     }
