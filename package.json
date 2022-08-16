@@ -1,6 +1,6 @@
 {
     "name": "lua-to-typescript",
-    "version": "0.2.1",
+    "version": "0.2.2",
     "description": "Transforms Lua to TypeScript code.",
     "scripts": {
         "build": "tsc -p tsconfig.json",
