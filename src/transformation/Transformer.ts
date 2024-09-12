@@ -458,12 +458,13 @@ export class Transformer {
         return this.builder.createBreak(node);
     }
 
-    private transformTableKeyString(node: luaparse.TableKeyString): ts.ObjectLiteralElementLike {
-        const name =
-            node.key.type === "Identifier"
-                ? this.transformIdentifier(node.key)
-                : this.builder.createComputedPropertyName(this.transformExpression(node.key), node.key);
+    private transformTableKey(node: luaparse.TableKey): ts.ObjectLiteralElementLike {
+        const name = this.builder.createComputedPropertyName(this.transformExpression(node.key), node.key);
+        return this.builder.createPropertyAssignment(name, this.transformExpression(node.value), node);
+    }
 
+    private transformTableKeyString(node: luaparse.TableKeyString): ts.ObjectLiteralElementLike {
+        const name = this.transformIdentifier(node.key);
         return this.builder.createPropertyAssignment(name, this.transformExpression(node.value), node);
     }
 
@@ -474,7 +475,9 @@ export class Transformer {
     private transformTableConstructorExpression(
         node: luaparse.TableConstructorExpression
     ): ts.ObjectLiteralExpression | ts.ArrayLiteralExpression {
-        const usingTableKeyStrings = node.fields.some((field) => field.type === "TableKeyString");
+        const usingTableKeyStrings = node.fields.some(
+            (field) => field.type === "TableKey" || field.type === "TableKeyString"
+        );
         const usingTableValues = node.fields.some((field) => field.type === "TableValue");
         if (usingTableKeyStrings && usingTableValues) {
             throw new Error("Cannot use table keys and values together");
@@ -486,7 +489,11 @@ export class Transformer {
             );
         } else {
             return this.builder.createObjectLiteral(
-                node.fields.map((field) => this.transformTableKeyString(field as luaparse.TableKeyString))
+                node.fields.map((field) =>
+                    field.type === "TableKey"
+                        ? this.transformTableKey(field)
+                        : this.transformTableKeyString(field as luaparse.TableKeyString)
+                )
             );
         }
     }

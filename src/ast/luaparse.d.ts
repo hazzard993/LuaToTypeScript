@@ -162,7 +162,7 @@ declare module "luaparse" {
 
     export interface TableConstructorExpression extends Node {
         type: "TableConstructorExpression";
-        fields: Array<TableValue | TableKeyString>;
+        fields: Array<TableValue | TableKey | TableKeyString>;
     }
 
     export interface UnaryExpression extends Node {
@@ -190,9 +190,15 @@ declare module "luaparse" {
         value: Expression;
     }
 
+    export interface TableKey extends Node {
+        type: "TableKey";
+        key: Expression;
+        value: Expression;
+    }
+
     export interface TableKeyString extends Node {
         type: "TableKeyString";
-        key: Expression;
+        key: Identifier;
         value: Expression;
     }
 

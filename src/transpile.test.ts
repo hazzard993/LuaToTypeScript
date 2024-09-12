@@ -31,4 +31,14 @@ describe("Check transpiler output", () => {
             expect(receivedTsCode).toStrictEqual(expectedTsCode);
         });
     });
+    describe("Table Constructors", () => {
+        test.each([
+            ["a = { b, c }", "a = [b, c];", "TableValue x2"],
+            ["a = { b = 1, c = 2 }", "a = { b: 1, c: 2 };", "TableKeyString x2"],
+            ["a = { [b] = 1, [c] = 2 }", "a = { [b]: 1, [c]: 2 };", "TableKey x2"],
+        ])("%p transforms into %p. (%p)", (luaCode, expectedTsCode) => {
+            const { tsCode: receivedTsCode } = transformLuaToTypeScript(luaCode);
+            expect(receivedTsCode).toStrictEqual(expectedTsCode);
+        });
+    });
 });
