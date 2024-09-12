@@ -560,24 +560,26 @@ export class Transformer {
     private transformAssignment(
         variables: Array<luaparse.Identifier | luaparse.MemberExpression | luaparse.IndexExpression>,
         expressions: luaparse.Expression[]
-    ):
-        | {
-              left: ts.Identifier | ts.PropertyAccessExpression | ts.ElementAccessExpression;
-              right: ts.Expression;
-          }
-        | {
-              left: ts.ArrayLiteralExpression;
-              right: ts.ArrayLiteralExpression;
-          } {
+    ): {
+        left: ts.Identifier | ts.PropertyAccessExpression | ts.ElementAccessExpression | ts.ArrayLiteralExpression;
+        right: ts.Expression;
+    } {
         const transformedVariables = variables.map((variable) =>
             this.transformAssignmentLeftHandSideExpression(variable)
         );
         const transformedExpressions = expressions.map((expression) => this.transformExpression(expression));
         if (variables.length > 1) {
-            return {
-                left: this.builder.createArrayLiteral(transformedVariables, false),
-                right: this.builder.createArrayLiteral(transformedExpressions, false),
-            };
+            if (expressions.length > 1) {
+                return {
+                    left: this.builder.createArrayLiteral(transformedVariables, false),
+                    right: this.builder.createArrayLiteral(transformedExpressions, false),
+                };
+            } else {
+                return {
+                    left: this.builder.createArrayLiteral(transformedVariables, false),
+                    right: transformedExpressions[0],
+                };
+            }
         } else {
             return {
                 left: transformedVariables[0],
@@ -627,26 +629,32 @@ export class Transformer {
     private transformLocalBindingPattern(
         variables: luaparse.Identifier[],
         expressions: luaparse.Expression[]
-    ):
-        | {
-              left: ts.Identifier;
-              right: ts.Expression;
-          }
-        | {
-              left: ts.ArrayBindingPattern;
-              right: ts.ArrayLiteralExpression;
-          } {
+    ): {
+        left: ts.Identifier | ts.ArrayBindingPattern;
+        right: ts.Expression;
+    } {
         const transformedVariables = variables.map((variable) => this.transformIdentifier(variable));
         const transformedExpressions = expressions.map((expression) => this.transformExpression(expression));
         if (variables.length > 1) {
-            return {
-                left: this.builder.createArrayBindingPattern(
-                    transformedVariables.map((variable) =>
-                        this.builder.createBindingElement(undefined, undefined, variable, undefined)
-                    )
-                ),
-                right: this.builder.createArrayLiteral(transformedExpressions, false),
-            };
+            if (expressions.length > 1) {
+                return {
+                    left: this.builder.createArrayBindingPattern(
+                        transformedVariables.map((variable) =>
+                            this.builder.createBindingElement(undefined, undefined, variable, undefined)
+                        )
+                    ),
+                    right: this.builder.createArrayLiteral(transformedExpressions, false),
+                };
+            } else {
+                return {
+                    left: this.builder.createArrayBindingPattern(
+                        transformedVariables.map((variable) =>
+                            this.builder.createBindingElement(undefined, undefined, variable, undefined)
+                        )
+                    ),
+                    right: transformedExpressions[0],
+                };
+            }
         } else {
             return {
                 left: transformedVariables[0],
