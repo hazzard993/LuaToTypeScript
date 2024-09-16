@@ -458,12 +458,13 @@ export class Transformer {
         return this.builder.createBreak(node);
     }
 
-    private transformTableKeyString(node: luaparse.TableKeyString): ts.ObjectLiteralElementLike {
-        const name =
-            node.key.type === "Identifier"
-                ? this.transformIdentifier(node.key)
-                : this.builder.createComputedPropertyName(this.transformExpression(node.key), node.key);
+    private transformTableKey(node: luaparse.TableKey): ts.ObjectLiteralElementLike {
+        const name = this.builder.createComputedPropertyName(this.transformExpression(node.key), node.key);
+        return this.builder.createPropertyAssignment(name, this.transformExpression(node.value), node);
+    }
 
+    private transformTableKeyString(node: luaparse.TableKeyString): ts.ObjectLiteralElementLike {
+        const name = this.transformIdentifier(node.key);
         return this.builder.createPropertyAssignment(name, this.transformExpression(node.value), node);
     }
 
@@ -474,7 +475,9 @@ export class Transformer {
     private transformTableConstructorExpression(
         node: luaparse.TableConstructorExpression
     ): ts.ObjectLiteralExpression | ts.ArrayLiteralExpression {
-        const usingTableKeyStrings = node.fields.some((field) => field.type === "TableKeyString");
+        const usingTableKeyStrings = node.fields.some(
+            (field) => field.type === "TableKey" || field.type === "TableKeyString"
+        );
         const usingTableValues = node.fields.some((field) => field.type === "TableValue");
         if (usingTableKeyStrings && usingTableValues) {
             throw new Error("Cannot use table keys and values together");
@@ -486,7 +489,11 @@ export class Transformer {
             );
         } else {
             return this.builder.createObjectLiteral(
-                node.fields.map((field) => this.transformTableKeyString(field as luaparse.TableKeyString))
+                node.fields.map((field) =>
+                    field.type === "TableKey"
+                        ? this.transformTableKey(field)
+                        : this.transformTableKeyString(field as luaparse.TableKeyString)
+                )
             );
         }
     }
@@ -560,24 +567,26 @@ export class Transformer {
     private transformAssignment(
         variables: Array<luaparse.Identifier | luaparse.MemberExpression | luaparse.IndexExpression>,
         expressions: luaparse.Expression[]
-    ):
-        | {
-              left: ts.Identifier | ts.PropertyAccessExpression | ts.ElementAccessExpression;
-              right: ts.Expression;
-          }
-        | {
-              left: ts.ArrayLiteralExpression;
-              right: ts.ArrayLiteralExpression;
-          } {
+    ): {
+        left: ts.Identifier | ts.PropertyAccessExpression | ts.ElementAccessExpression | ts.ArrayLiteralExpression;
+        right: ts.Expression;
+    } {
         const transformedVariables = variables.map((variable) =>
             this.transformAssignmentLeftHandSideExpression(variable)
         );
         const transformedExpressions = expressions.map((expression) => this.transformExpression(expression));
         if (variables.length > 1) {
-            return {
-                left: this.builder.createArrayLiteral(transformedVariables, false),
-                right: this.builder.createArrayLiteral(transformedExpressions, false),
-            };
+            if (expressions.length > 1) {
+                return {
+                    left: this.builder.createArrayLiteral(transformedVariables, false),
+                    right: this.builder.createArrayLiteral(transformedExpressions, false),
+                };
+            } else {
+                return {
+                    left: this.builder.createArrayLiteral(transformedVariables, false),
+                    right: transformedExpressions[0],
+                };
+            }
         } else {
             return {
                 left: transformedVariables[0],
@@ -627,26 +636,32 @@ export class Transformer {
     private transformLocalBindingPattern(
         variables: luaparse.Identifier[],
         expressions: luaparse.Expression[]
-    ):
-        | {
-              left: ts.Identifier;
-              right: ts.Expression;
-          }
-        | {
-              left: ts.ArrayBindingPattern;
-              right: ts.ArrayLiteralExpression;
-          } {
+    ): {
+        left: ts.Identifier | ts.ArrayBindingPattern;
+        right: ts.Expression;
+    } {
         const transformedVariables = variables.map((variable) => this.transformIdentifier(variable));
         const transformedExpressions = expressions.map((expression) => this.transformExpression(expression));
         if (variables.length > 1) {
-            return {
-                left: this.builder.createArrayBindingPattern(
-                    transformedVariables.map((variable) =>
-                        this.builder.createBindingElement(undefined, undefined, variable, undefined)
-                    )
-                ),
-                right: this.builder.createArrayLiteral(transformedExpressions, false),
-            };
+            if (expressions.length > 1) {
+                return {
+                    left: this.builder.createArrayBindingPattern(
+                        transformedVariables.map((variable) =>
+                            this.builder.createBindingElement(undefined, undefined, variable, undefined)
+                        )
+                    ),
+                    right: this.builder.createArrayLiteral(transformedExpressions, false),
+                };
+            } else {
+                return {
+                    left: this.builder.createArrayBindingPattern(
+                        transformedVariables.map((variable) =>
+                            this.builder.createBindingElement(undefined, undefined, variable, undefined)
+                        )
+                    ),
+                    right: transformedExpressions[0],
+                };
+            }
         } else {
             return {
                 left: transformedVariables[0],
