@@ -1,12 +1,12 @@
 {
-    "compilerOptions": {
-        "rootDir": "src",
-        "outDir": "dist",
-        "target": "es2017",
-        "module": "commonjs",
-        "downlevelIteration": true,
-        "strict": true,
-        "types": ["jest", "node"]
-    },
-    "exclude": ["src/*.test.ts"]
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "target": "es2017",
+    "module": "commonjs",
+    "downlevelIteration": true,
+    "strict": true,
+    "types": ["jest", "node"]
+  },
+  "exclude": ["src/*.test.ts"]
 }

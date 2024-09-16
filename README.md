@@ -5,8 +5,6 @@
 Converts Lua to TypeScript code. Uses [LDoc](https://stevedonovan.github.io/ldoc/) type annotations for typing information.
 
 ```sh
-yarn global add lua-to-typescript
-# or
 npm install -g lua-to-typescript
 ```
 
