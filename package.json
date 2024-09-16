@@ -2,26 +2,28 @@
   "name": "lua-to-typescript",
   "version": "0.2.2",
   "description": "Transforms Lua to TypeScript code.",
-  "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "fix:prettier": "prettier --check --write \"**/*.{js,ts,yml,json,md}\"",
-    "test": "jest"
-  },
-  "bin": {
-    "ltts": "dist/index.js"
-  },
-  "files": [
-    "dist/**/*.js",
-    "dist/*.js"
-  ],
-  "main": "dist/index",
   "keywords": [
     "lua",
     "typescript",
     "transpiler"
   ],
-  "author": "",
-  "license": "ISC",
+  "repository": "hazzard993/LuaToTypeScript",
+  "bugs": "https://github.com/hazzard993/LuaToTypeScript/issues",
+  "homepage": "https://github.com/hazzard993/LuaToTypeScript#readme",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "files": [
+    "dist/**/*.js",
+    "dist/*.js"
+  ],
+  "bin": {
+    "ltts": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "fix:prettier": "prettier --check --write \"**/*.{js,ts,yml,json,md}\"",
+    "test": "jest"
+  },
   "devDependencies": {
     "@types/jest": "^29.5.13",
     "@types/node": "^22.5.5",
@@ -36,13 +38,5 @@
     "fast-glob": "^3.3.2",
     "luaparse": "^0.3.1",
     "source-map": "^0.7.3"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/hazzard993/LuaToTypeScript.git"
-  },
-  "bugs": {
-    "url": "https://github.com/hazzard993/LuaToTypeScript/issues"
-  },
-  "homepage": "https://github.com/hazzard993/LuaToTypeScript#readme"
+  }
 }
